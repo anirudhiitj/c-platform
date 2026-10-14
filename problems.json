@@ -1,0 +1,97 @@
+[
+  {
+    "id": "q1",
+    "title": "Q1. Left Rotate an Array by One Position",
+    "statement": "Given an array of n integers, move the first element to the end and shift every other element one position to the left. Print the resulting array.\n\nInput format:\nLine 1: n\nLine 2: n space-separated integers\n\nOutput format:\nPrint the rotated array with spaces between elements.\n\nExample:\nInput:\n5\n1 2 3 4 5\nOutput:\n2 3 4 5 1",
+    "tests": [
+      { "visible": true, "input": "5\n1 2 3 4 5\n", "expected": "2 3 4 5 1" },
+      { "visible": true, "input": "1\n42\n", "expected": "42" },
+      { "visible": false, "input": "6\n-3 0 8 -1 8 5\n", "expected": "0 8 -1 8 5 -3" },
+      { "visible": false, "input": "2\n99 -99\n", "expected": "-99 99" }
+    ]
+  },
+  {
+    "id": "q2",
+    "title": "Q2. Common Elements of Two Arrays (No Duplicates)",
+    "statement": "Given two arrays, print the distinct elements that occur in both arrays. Each common value must be printed only once, even if it appears multiple times in either input array. Print the values in the order in which they first appear in the first array.\n\nInput format:\nLine 1: n m\nLine 2: n integers for the first array\nLine 3: m integers for the second array\n\nOutput format:\nPrint the common distinct elements separated by spaces. If there are no common elements, print -1.\n\nExample:\nInput:\n6 5\n4 9 4 2 7 9\n8 4 4 9 1\nOutput:\n4 9",
+    "tests": [
+      { "visible": true, "input": "6 5\n4 9 4 2 7 9\n8 4 4 9 1\n", "expected": "4 9" },
+      { "visible": true, "input": "4 3\n1 3 5 7\n2 4 6\n", "expected": "-1" },
+      { "visible": false, "input": "1 1\n-8\n-8\n", "expected": "-8" },
+      { "visible": false, "input": "8 7\n5 5 5 2 2 9 1 9\n9 9 5 5 5 5 0\n", "expected": "5 9" },
+      { "visible": false, "input": "5 4\n10 20 30 40 50\n50 40 30 20\n", "expected": "20 30 40 50" }
+    ]
+  },
+  {
+    "id": "q3",
+    "title": "Q3. Find the Leaders in an Array",
+    "statement": "An element is a leader if it is strictly greater than every element to its right. The last element is always a leader. Given an array, print all leaders from left to right.\n\nInput format:\nLine 1: n\nLine 2: n space-separated integers\n\nOutput format:\nPrint the leaders in their original left-to-right order.\n\nExample:\nInput:\n6\n16 17 4 3 5 2\nOutput:\n17 5 2",
+    "tests": [
+      { "visible": true, "input": "6\n16 17 4 3 5 2\n", "expected": "17 5 2" },
+      { "visible": true, "input": "5\n1 2 3 4 5\n", "expected": "5" },
+      { "visible": false, "input": "5\n5 5 4 4 1\n", "expected": "5 4 1" },
+      { "visible": false, "input": "1\n-20\n", "expected": "-20" },
+      { "visible": false, "input": "7\n9 8 7 6 5 4 3\n", "expected": "9 8 7 6 5 4 3" }
+    ]
+  },
+  {
+    "id": "q4",
+    "title": "Q4. Difference Between the Second Maximum and Second Minimum",
+    "statement": "Given an array containing at least two distinct values, find the second smallest distinct element and the second largest distinct element. Print: second largest - second smallest. Duplicates do not create new ranks.\n\nInput format:\nLine 1: n\nLine 2: n space-separated integers\n\nOutput format:\nPrint one integer.\n\nExample:\nInput:\n6\n7 2 9 4 9 1\nOutput:\n5\n\nThe second smallest is 2 and the second largest is 7, so 7 - 2 = 5.",
+    "tests": [
+      { "visible": true, "input": "6\n7 2 9 4 9 1\n", "expected": "5" },
+      { "visible": true, "input": "4\n10 20 20 30\n", "expected": "0" },
+      { "visible": false, "input": "7\n-10 -3 -10 0 8 8 4\n", "expected": "7" },
+      { "visible": false, "input": "5\n-5 -4 -3 -2 -1\n", "expected": "2" },
+      { "visible": false, "input": "8\n100 1 50 1 100 75 25 50\n", "expected": "50" }
+    ]
+  },
+  {
+    "id": "q5",
+    "title": "Q5. Left Rotate an Array by K Positions",
+    "statement": "Given an array of n integers and an integer k, rotate the array to the left by k positions. Rotations wrap around, and k may be greater than n.\n\nInput format:\nLine 1: n k\nLine 2: n space-separated integers\n\nOutput format:\nPrint the rotated array with spaces between elements.\n\nExample:\nInput:\n7 3\n1 2 3 4 5 6 7\nOutput:\n4 5 6 7 1 2 3",
+    "tests": [
+      { "visible": true, "input": "7 3\n1 2 3 4 5 6 7\n", "expected": "4 5 6 7 1 2 3" },
+      { "visible": true, "input": "5 10\n8 6 4 2 0\n", "expected": "8 6 4 2 0" },
+      { "visible": false, "input": "6 0\n-1 4 9 2 7 3\n", "expected": "-1 4 9 2 7 3" },
+      { "visible": false, "input": "4 9\n1 2 3 4\n", "expected": "2 3 4 1" },
+      { "visible": false, "input": "1 12345\n-8\n", "expected": "-8" }
+    ]
+  },
+  {
+    "id": "q6",
+    "title": "Q6. Maximum Sum Mountain Subarray",
+    "statement": "A mountain subarray is a contiguous subarray with a strictly increasing part followed immediately by a strictly decreasing part. It must contain at least three elements and have a peak: a[i-1] < a[i] > a[i+1]. Equal adjacent values break a mountain. Find the maximum sum among all mountain subarrays. If the array contains no mountain, print 0.\n\nInput format:\nLine 1: n\nLine 2: n space-separated integers\n\nOutput format:\nPrint the maximum mountain sum.\n\nExample:\nInput:\n8\n1 3 5 4 2 6 7 1\nOutput:\n15\n\nThe mountain [1, 3, 5, 4, 2] has sum 15.",
+    "tests": [
+      { "visible": true, "input": "8\n1 3 5 4 2 6 7 1\n", "expected": "15" },
+      { "visible": true, "input": "5\n1 2 3 4 5\n", "expected": "0" },
+      { "visible": false, "input": "7\n-5 -2 -1 -3 -4 0 -1\n", "expected": "-4" },
+      { "visible": false, "input": "9\n2 4 8 6 3 1 5 4 0\n", "expected": "24" },
+      { "visible": false, "input": "6\n3 3 2 1 0 -1\n", "expected": "0" }
+    ]
+  },
+  {
+    "id": "q7",
+    "title": "Q7. Maximum Length of a Mountain",
+    "statement": "A mountain is a contiguous sequence that strictly increases for one or more steps, then strictly decreases for one or more steps. A peak is required, so a purely increasing or purely decreasing sequence is not a mountain. Equal adjacent values break a mountain. Find the length of the longest mountain. If no mountain exists, print 0.\n\nInput format:\nLine 1: n\nLine 2: n space-separated integers\n\nOutput format:\nPrint one integer: the length of the longest mountain.\n\nExample:\nInput:\n9\n2 3 5 4 2 1 6 7 5\nOutput:\n6\n\nThe longest mountain is [2, 3, 5, 4, 2, 1].",
+    "tests": [
+      { "visible": true, "input": "9\n2 3 5 4 2 1 6 7 5\n", "expected": "6" },
+      { "visible": true, "input": "6\n1 2 3 4 5 6\n", "expected": "0" },
+      { "visible": false, "input": "8\n5 4 3 2 1 0 -1 -2\n", "expected": "0" },
+      { "visible": false, "input": "7\n1 2 3 3 2 1 0\n", "expected": "4" },
+      { "visible": false, "input": "10\n1 2 4 7 6 5 3 2 4 1\n", "expected": "8" }
+    ]
+  },
+  {
+    "id": "q8",
+    "title": "Q8. Gas Station Circuit",
+    "statement": "There are n gas stations on a circular route. gas[i] is the gas available at station i, and cost[i] is the gas needed to travel from station i to station (i + 1) modulo n. Start with an empty tank at one station and travel clockwise around the circuit exactly once. Find the starting station index if a complete trip is possible; otherwise print -1. If a solution exists, it is unique. Station indices are zero-based.\n\nInput format:\nLine 1: n\nLine 2: n integers for gas\nLine 3: n integers for cost\n\nOutput format:\nPrint the starting index, or -1.\n\nExample:\nInput:\n5\n1 2 3 4 5\n3 4 5 1 2\nOutput:\n3",
+    "tests": [
+      { "visible": true, "input": "5\n1 2 3 4 5\n3 4 5 1 2\n", "expected": "3" },
+      { "visible": true, "input": "3\n2 2 2\n3 3 3\n", "expected": "-1" },
+      { "visible": false, "input": "1\n5\n5\n", "expected": "0" },
+      { "visible": false, "input": "4\n4 1 2 3\n2 2 4 1\n", "expected": "3" },
+      { "visible": false, "input": "6\n0 5 0 0 7 2\n3 2 4 1 2 1\n", "expected": "4" }
+    ]
+  }
+]

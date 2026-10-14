@@ -1,0 +1,12 @@
+{
+  "name": "c-practice",
+  "version": "1.0.0",
+  "description": "Mentor-hosted C practice site with server-side compile and judge",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

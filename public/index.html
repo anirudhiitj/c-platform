@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C Practice</title>
+<style>
+  :root {
+    --bg: #0f1115; --panel: #161a21; --panel2: #1c212b; --border: #2a303c;
+    --text: #e6e9ef; --muted: #8b93a3; --accent: #4f8cff; --ok: #3ecf8e; --bad: #ff6b6b; --warn: #f5b942;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--text); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; }
+  header { display: flex; align-items: center; gap: 12px; padding: 8px 14px; background: var(--panel); border-bottom: 1px solid var(--border); }
+  header h1 { font-size: 15px; margin: 0 8px 0 0; font-weight: 600; }
+  #tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tab { background: var(--panel2); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 4px 12px; cursor: pointer; font: inherit; }
+  .tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(280px, 42%) 1fr; }
+  #left { overflow-y: auto; padding: 18px 22px; border-right: 1px solid var(--border); background: var(--panel); }
+  #left h2 { margin: 0 0 12px; font-size: 18px; }
+  #statement { white-space: pre-wrap; }
+  .case { margin-top: 14px; background: var(--panel2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+  .case h4 { margin: 0 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  .lbl { font-size: 11px; color: var(--muted); margin-top: 6px; }
+  pre { margin: 2px 0 0; font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre-wrap; word-break: break-all; }
+  .note { margin-top: 16px; color: var(--muted); font-size: 12px; }
+  #right { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+  #toolbar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--panel); border-bottom: 1px solid var(--border); }
+  #toolbar .spacer { flex: 1; }
+  button.act { border: 0; border-radius: 6px; padding: 6px 16px; font: inherit; font-weight: 600; cursor: pointer; color: #fff; }
+  button.act:disabled { opacity: .5; cursor: wait; }
+  #run { background: #394156; }
+  #submit { background: var(--ok); color: #06210f; }
+  #reset { background: transparent; color: var(--muted); border: 1px solid var(--border); font-weight: 400; }
+  #editorWrap { flex: 1 1 55%; min-height: 160px; position: relative; }
+  #editor, #fallback { position: absolute; inset: 0; }
+  #fallback { width: 100%; height: 100%; background: #1e1e1e; color: #ddd; border: 0; padding: 10px; font: 14px/1.5 ui-monospace, Menlo, Consolas, monospace; resize: none; tab-size: 4; display: none; }
+  #bottom { flex: 1 1 45%; min-height: 140px; display: flex; flex-direction: column; border-top: 1px solid var(--border); background: var(--panel); }
+  #btabs { display: flex; gap: 2px; padding: 6px 10px 0; }
+  .btab { padding: 4px 12px; cursor: pointer; border: 0; background: transparent; color: var(--muted); font: inherit; border-bottom: 2px solid transparent; }
+  .btab.active { color: var(--text); border-bottom-color: var(--accent); }
+  .pane { flex: 1; overflow: auto; padding: 10px 14px; display: none; }
+  .pane.active { display: block; }
+  textarea#stdin { width: 100%; height: 100%; min-height: 80px; background: var(--panel2); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 8px; font: 13px ui-monospace, Menlo, Consolas, monospace; resize: none; }
+  .badge { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; }
+  .AC, .OK { background: rgba(62,207,142,.15); color: var(--ok); }
+  .WA, .RE, .CE, .TLE, .OLE { background: rgba(255,107,107,.15); color: var(--bad); }
+  .summary { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+  .row { border: 1px solid var(--border); border-radius: 6px; margin-bottom: 6px; background: var(--panel2); }
+  .row summary { cursor: pointer; padding: 6px 10px; display: flex; gap: 10px; align-items: center; }
+  .row.nodetail summary { cursor: default; }
+  .row .body { padding: 2px 12px 10px; }
+  .err { color: var(--bad); }
+  .muted { color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>C Practice</h1>
+  <div id="tabs"></div>
+</header>
+
+<main>
+  <section id="left">
+    <h2 id="title"></h2>
+    <div id="statement"></div>
+    <div id="cases"></div>
+    <div class="note" id="hiddenNote"></div>
+  </section>
+
+  <section id="right">
+    <div id="toolbar">
+      <span class="muted">main.c (C, gcc)</span>
+      <span class="spacer"></span>
+      <button class="act" id="reset" title="Restore starter code">Reset</button>
+      <button class="act" id="run">Run</button>
+      <button class="act" id="submit">Submit</button>
+    </div>
+    <div id="editorWrap">
+      <div id="editor"></div>
+      <textarea id="fallback" spellcheck="false"></textarea>
+    </div>
+    <div id="bottom">
+      <div id="btabs">
+        <button class="btab active" data-pane="paneInput">Custom input</button>
+        <button class="btab" data-pane="paneOutput">Output</button>
+        <button class="btab" data-pane="paneResults">Test results</button>
+      </div>
+      <div class="pane active" id="paneInput"><textarea id="stdin" spellcheck="false" placeholder="stdin for the Run button"></textarea></div>
+      <div class="pane" id="paneOutput"><span class="muted">Press Run to execute your program with the custom input.</span></div>
+      <div class="pane" id="paneResults"><span class="muted">Press Submit to run all test cases.</span></div>
+    </div>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
+<script>
+const DEFAULT_TEMPLATE = '#include <stdio.h>\n\nint main(void) {\n    \n    return 0;\n}\n';
+let problems = [], cur = 0, editor = null;
+
+const $ = (id) => document.getElementById(id);
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+function codeKey(i) { return 'code-' + problems[i].id; }
+function store(k, v) { try { localStorage.setItem(k, v); } catch (_) {} }
+function load(k) { try { return localStorage.getItem(k); } catch (_) { return null; } }
+
+/* ---------- editor (Monaco with textarea fallback) ---------- */
+function makeFallback() {
+  const ta = $('fallback');
+  ta.style.display = 'block';
+  ta.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const s = ta.selectionStart;
+      ta.value = ta.value.slice(0, s) + '    ' + ta.value.slice(ta.selectionEnd);
+      ta.selectionStart = ta.selectionEnd = s + 4;
+    }
+  });
+  ta.addEventListener('input', () => saveCode());
+  return { getValue: () => ta.value, setValue: (v) => { ta.value = v; } };
+}
+
+function initEditor() {
+  return new Promise((resolve) => {
+    let settled = false;
+    const fallback = () => { if (!settled) { settled = true; editor = makeFallback(); resolve(); } };
+    const timer = setTimeout(fallback, 6000);
+    if (typeof require === 'undefined' || !require.config) { clearTimeout(timer); return fallback(); }
+    require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' } });
+    require(['vs/editor/editor.main'], () => {
+      if (settled) return;
+      settled = true; clearTimeout(timer);
+      const m = monaco.editor.create($('editor'), {
+        value: DEFAULT_TEMPLATE, language: 'c', theme: 'vs-dark',
+        automaticLayout: true, fontSize: 14, minimap: { enabled: false },
+        scrollBeyondLastLine: false, tabSize: 4, insertSpaces: true,
+      });
+      m.onDidChangeModelContent(() => saveCode());
+      editor = { getValue: () => m.getValue(), setValue: (v) => m.setValue(v) };
+      resolve();
+    }, fallback);
+  });
+}
+
+function saveCode() { if (editor && problems.length) store(codeKey(cur), editor.getValue()); }
+
+/* ---------- problem rendering ---------- */
+function renderTabs() {
+  const t = $('tabs'); t.textContent = '';
+  problems.forEach((p, i) => {
+    const b = el('button', 'tab' + (i === cur ? ' active' : ''), 'Q' + (i + 1));
+    b.title = p.title;
+    b.onclick = () => select(i);
+    t.appendChild(b);
+  });
+}
+
+function select(i) {
+  saveCode();
+  cur = i;
+  const p = problems[i];
+  renderTabs();
+  $('title').textContent = p.title;
+  $('statement').textContent = p.statement;
+  const cases = $('cases'); cases.textContent = '';
+  p.tests.forEach((t, k) => {
+    const c = el('div', 'case');
+    c.appendChild(el('h4', null, 'Visible test case ' + (k + 1)));
+    c.appendChild(el('div', 'lbl', 'Input'));
+    c.appendChild(el('pre', null, t.input.replace(/\n$/, '')));
+    c.appendChild(el('div', 'lbl', 'Expected output'));
+    c.appendChild(el('pre', null, t.expected));
+    cases.appendChild(c);
+  });
+  $('hiddenNote').textContent = p.hiddenCount
+    ? p.hiddenCount + ' hidden test case' + (p.hiddenCount > 1 ? 's' : '') + ' will also be checked when you submit.'
+    : '';
+  editor.setValue(load(codeKey(i)) || p.template || DEFAULT_TEMPLATE);
+  $('stdin').value = p.tests.length ? p.tests[0].input : '';
+  $('paneOutput').textContent = '';
+  $('paneOutput').appendChild(el('span', 'muted', 'Press Run to execute your program with the custom input.'));
+  $('paneResults').textContent = '';
+  $('paneResults').appendChild(el('span', 'muted', 'Press Submit to run all test cases.'));
+  showPane('paneInput');
+  $('left').scrollTop = 0;
+}
+
+function showPane(id) {
+  document.querySelectorAll('.pane').forEach((x) => x.classList.toggle('active', x.id === id));
+  document.querySelectorAll('.btab').forEach((x) => x.classList.toggle('active', x.dataset.pane === id));
+}
+document.querySelectorAll('.btab').forEach((b) => b.onclick = () => showPane(b.dataset.pane));
+
+/* ---------- API calls ---------- */
+const LABEL = { AC: 'Accepted', OK: 'Ran OK', WA: 'Wrong Answer', RE: 'Runtime Error', CE: 'Compile Error', TLE: 'Time Limit Exceeded', OLE: 'Output Limit Exceeded' };
+function badge(s) { return el('span', 'badge ' + s, LABEL[s] || s); }
+
+// Sends the access code (if the mentor set one) and asks for it when the server says it is needed.
+async function api(url, opts = {}) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const headers = Object.assign({}, opts.headers, { 'x-access-code': load('access-code') || '' });
+    const r = await fetch(url, Object.assign({}, opts, { headers }));
+    if (r.status === 401) {
+      const c = prompt('Enter the access code your mentor gave you:');
+      if (c === null) throw new Error('Access code required.');
+      store('access-code', c);
+      continue;
+    }
+    return r;
+  }
+  throw new Error('Wrong access code.');
+}
+
+async function post(url, body) {
+  const r = await api(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
+  return j;
+}
+
+function busy(on) { $('run').disabled = on; $('submit').disabled = on; }
+
+$('run').onclick = async () => {
+  busy(true);
+  const out = $('paneOutput'); out.textContent = ''; out.appendChild(el('span', 'muted', 'Compiling and running...'));
+  showPane('paneOutput');
+  try {
+    const r = await post('/api/run', { code: editor.getValue(), input: $('stdin').value });
+    out.textContent = '';
+    out.appendChild(badge(r.status));
+    if (r.timeMs !== undefined) out.appendChild(el('span', 'muted', '  ' + r.timeMs + ' ms'));
+    if (r.status === 'CE') { out.appendChild(el('pre', 'err', r.compileError)); return; }
+    if (r.warnings) { out.appendChild(el('div', 'lbl', 'Compiler warnings')); out.appendChild(el('pre', 'muted', r.warnings)); }
+    out.appendChild(el('div', 'lbl', 'stdout'));
+    out.appendChild(el('pre', null, r.stdout || '(empty)'));
+    if (r.stderr) { out.appendChild(el('div', 'lbl', 'stderr')); out.appendChild(el('pre', 'err', r.stderr)); }
+    if (r.status === 'RE') out.appendChild(el('div', 'err', 'Exit code ' + r.exitCode + (r.signal ? ', signal ' + r.signal : '')));
+  } catch (e) {
+    out.textContent = ''; out.appendChild(el('pre', 'err', String(e.message || e)));
+  } finally { busy(false); }
+};
+
+$('submit').onclick = async () => {
+  busy(true);
+  const pane = $('paneResults'); pane.textContent = ''; pane.appendChild(el('span', 'muted', 'Compiling and judging...'));
+  showPane('paneResults');
+  try {
+    const r = await post('/api/submit', { code: editor.getValue(), problemId: problems[cur].id });
+    pane.textContent = '';
+    if (!r.compiled) {
+      pane.appendChild(badge('CE'));
+      pane.appendChild(el('pre', 'err', r.compileError));
+      return;
+    }
+    const all = r.passed === r.total;
+    const s = el('div', 'summary', all ? 'All tests passed (' + r.passed + '/' + r.total + ')' : 'Passed ' + r.passed + ' / ' + r.total);
+    s.style.color = all ? 'var(--ok)' : 'var(--warn)';
+    pane.appendChild(s);
+    r.results.forEach((t) => {
+      if (t.kind === 'hidden') {
+        const row = el('div', 'row nodetail');
+        const sm = el('summary'); sm.appendChild(el('span', null, 'Hidden test ' + t.index)); sm.appendChild(badge(t.status));
+        row.appendChild(sm); pane.appendChild(row);
+      } else {
+        const row = el('details', 'row');
+        if (t.status !== 'AC') row.open = true;
+        const sm = el('summary'); sm.appendChild(el('span', null, 'Visible test ' + t.index)); sm.appendChild(badge(t.status));
+        row.appendChild(sm);
+        const body = el('div', 'body');
+        body.appendChild(el('div', 'lbl', 'Input')); body.appendChild(el('pre', null, t.input.replace(/\n$/, '')));
+        body.appendChild(el('div', 'lbl', 'Expected')); body.appendChild(el('pre', null, t.expected));
+        body.appendChild(el('div', 'lbl', 'Your output')); body.appendChild(el('pre', null, t.output || '(empty)'));
+        row.appendChild(body); pane.appendChild(row);
+      }
+    });
+  } catch (e) {
+    pane.textContent = ''; pane.appendChild(el('pre', 'err', String(e.message || e)));
+  } finally { busy(false); }
+};
+
+$('reset').onclick = () => {
+  if (!confirm('Replace your code with the starter template?')) return;
+  editor.setValue(problems[cur].template || DEFAULT_TEMPLATE);
+};
+
+/* ---------- boot ---------- */
+(async function () {
+  problems = await (await api('/api/problems')).json();
+  await initEditor();
+  select(0);
+})();
+</script>
+</body>
+</html>
