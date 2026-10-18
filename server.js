@@ -29,7 +29,10 @@ function limited(limits, cmd, args) {
   return HAS_PRLIMIT ? ['prlimit', [...limits, cmd, ...args]] : [cmd, args];
 }
 
-const PROBLEMS = JSON.parse(fs.readFileSync(path.join(__dirname, 'problems.json'), 'utf8'));
+const ARRAY_PROBLEMS = JSON.parse(fs.readFileSync(path.join(__dirname, 'problems.json'), 'utf8'))
+  .map((p) => ({ ...p, category: p.category || 'Arrays' }));
+const STRING_PROBLEMS = JSON.parse(fs.readFileSync(path.join(__dirname, 'strings.json'), 'utf8'));
+const PROBLEMS = [...ARRAY_PROBLEMS, ...STRING_PROBLEMS];
 const BY_ID = new Map(PROBLEMS.map((p) => [p.id, p]));
 
 // ---------- tiny job semaphore ----------
@@ -188,6 +191,7 @@ function cooldown(req, res, next) {
 app.get('/api/problems', (req, res) => {
   res.json(PROBLEMS.map((p) => ({
     id: p.id,
+    category: p.category,
     title: p.title,
     statement: p.statement,
     template: p.template || null,

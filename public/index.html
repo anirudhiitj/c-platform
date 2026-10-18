@@ -12,8 +12,11 @@
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
   body { background: var(--bg); color: var(--text); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; }
-  header { display: flex; align-items: center; gap: 12px; padding: 8px 14px; background: var(--panel); border-bottom: 1px solid var(--border); }
+  header { display: flex; align-items: center; gap: 12px; padding: 8px 14px; background: var(--panel); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
   header h1 { font-size: 15px; margin: 0 8px 0 0; font-weight: 600; }
+  #sections { display: flex; gap: 6px; }
+  .section { background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 6px; padding: 4px 12px; cursor: pointer; font: inherit; }
+  .section.active { color: #fff; border-color: var(--accent); background: rgba(79,140,255,.2); }
   #tabs { display: flex; gap: 6px; flex-wrap: wrap; }
   .tab { background: var(--panel2); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 4px 12px; cursor: pointer; font: inherit; }
   .tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
@@ -59,6 +62,7 @@
 <body>
 <header>
   <h1>C Practice</h1>
+  <div id="sections"></div>
   <div id="tabs"></div>
 </header>
 
@@ -98,7 +102,7 @@
 <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
 <script>
 const DEFAULT_TEMPLATE = '#include <stdio.h>\n\nint main(void) {\n    \n    return 0;\n}\n';
-let problems = [], cur = 0, editor = null;
+let problems = [], visibleProblems = [], cur = 0, editor = null, section = 'Arrays';
 
 const $ = (id) => document.getElementById(id);
 function el(tag, cls, text) {
@@ -107,7 +111,7 @@ function el(tag, cls, text) {
   if (text !== undefined) e.textContent = text;
   return e;
 }
-function codeKey(i) { return 'code-' + problems[i].id; }
+function codeKey(id) { return 'code-' + id; }
 function store(k, v) { try { localStorage.setItem(k, v); } catch (_) {} }
 function load(k) { try { return localStorage.getItem(k); } catch (_) { return null; } }
 
@@ -149,12 +153,12 @@ function initEditor() {
   });
 }
 
-function saveCode() { if (editor && problems.length) store(codeKey(cur), editor.getValue()); }
+function saveCode() { if (editor && visibleProblems.length) store(codeKey(visibleProblems[cur].id), editor.getValue()); }
 
 /* ---------- problem rendering ---------- */
 function renderTabs() {
   const t = $('tabs'); t.textContent = '';
-  problems.forEach((p, i) => {
+  visibleProblems.forEach((p, i) => {
     const b = el('button', 'tab' + (i === cur ? ' active' : ''), 'Q' + (i + 1));
     b.title = p.title;
     b.onclick = () => select(i);
@@ -162,10 +166,19 @@ function renderTabs() {
   });
 }
 
+function renderSections() {
+  const s = $('sections'); s.textContent = '';
+  ['Arrays', 'Strings'].forEach((name) => {
+    const b = el('button', 'section' + (name === section ? ' active' : ''), name);
+    b.onclick = () => { section = name; visibleProblems = problems.filter((p) => p.category === section); cur = 0; renderSections(); select(0); };
+    s.appendChild(b);
+  });
+}
+
 function select(i) {
   saveCode();
   cur = i;
-  const p = problems[i];
+  const p = visibleProblems[i];
   renderTabs();
   $('title').textContent = p.title;
   $('statement').textContent = p.statement;
@@ -182,7 +195,7 @@ function select(i) {
   $('hiddenNote').textContent = p.hiddenCount
     ? p.hiddenCount + ' hidden test case' + (p.hiddenCount > 1 ? 's' : '') + ' will also be checked when you submit.'
     : '';
-  editor.setValue(load(codeKey(i)) || p.template || DEFAULT_TEMPLATE);
+  editor.setValue(load(codeKey(p.id)) || p.template || DEFAULT_TEMPLATE);
   $('stdin').value = p.tests.length ? p.tests[0].input : '';
   $('paneOutput').textContent = '';
   $('paneOutput').appendChild(el('span', 'muted', 'Press Run to execute your program with the custom input.'));
@@ -252,7 +265,7 @@ $('submit').onclick = async () => {
   const pane = $('paneResults'); pane.textContent = ''; pane.appendChild(el('span', 'muted', 'Compiling and judging...'));
   showPane('paneResults');
   try {
-    const r = await post('/api/submit', { code: editor.getValue(), problemId: problems[cur].id });
+    const r = await post('/api/submit', { code: editor.getValue(), problemId: visibleProblems[cur].id });
     pane.textContent = '';
     if (!r.compiled) {
       pane.appendChild(badge('CE'));
@@ -287,13 +300,15 @@ $('submit').onclick = async () => {
 
 $('reset').onclick = () => {
   if (!confirm('Replace your code with the starter template?')) return;
-  editor.setValue(problems[cur].template || DEFAULT_TEMPLATE);
+  editor.setValue(visibleProblems[cur].template || DEFAULT_TEMPLATE);
 };
 
 /* ---------- boot ---------- */
 (async function () {
   problems = await (await api('/api/problems')).json();
+  visibleProblems = problems.filter((p) => p.category === section);
   await initEditor();
+  renderSections();
   select(0);
 })();
 </script>
