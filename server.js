@@ -32,7 +32,8 @@ function limited(limits, cmd, args) {
 const ARRAY_PROBLEMS = JSON.parse(fs.readFileSync(path.join(__dirname, 'problems.json'), 'utf8'))
   .map((p) => ({ ...p, category: p.category || 'Arrays' }));
 const STRING_PROBLEMS = JSON.parse(fs.readFileSync(path.join(__dirname, 'strings.json'), 'utf8'));
-const PROBLEMS = [...ARRAY_PROBLEMS, ...STRING_PROBLEMS];
+const FUNCTION_PROBLEMS = JSON.parse(fs.readFileSync(path.join(__dirname, 'functions.json'), 'utf8'));
+const PROBLEMS = [...ARRAY_PROBLEMS, ...STRING_PROBLEMS, ...FUNCTION_PROBLEMS];
 const BY_ID = new Map(PROBLEMS.map((p) => [p.id, p]));
 
 // ---------- tiny job semaphore ----------

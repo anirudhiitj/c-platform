@@ -153,7 +153,13 @@ function initEditor() {
   });
 }
 
-function saveCode() { if (editor && visibleProblems.length) store(codeKey(visibleProblems[cur].id), editor.getValue()); }
+function saveCode(problem = visibleProblems[cur]) {
+  if (editor && problem) store(codeKey(problem.id), editor.getValue());
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') saveCode();
+});
+window.addEventListener('beforeunload', () => saveCode());
 
 /* ---------- problem rendering ---------- */
 function renderTabs() {
@@ -168,15 +174,25 @@ function renderTabs() {
 
 function renderSections() {
   const s = $('sections'); s.textContent = '';
-  ['Arrays', 'Strings'].forEach((name) => {
+  ['Arrays', 'Strings', 'Functions'].forEach((name) => {
     const b = el('button', 'section' + (name === section ? ' active' : ''), name);
-    b.onclick = () => { section = name; visibleProblems = problems.filter((p) => p.category === section); cur = 0; renderSections(); select(0); };
+    b.onclick = () => {
+      if (name === section) return;
+      const previousProblem = visibleProblems[cur];
+      saveCode(previousProblem);
+      section = name;
+      visibleProblems = problems.filter((p) => p.category === section);
+      cur = 0;
+      renderSections();
+      select(0, false);
+    };
     s.appendChild(b);
   });
 }
 
-function select(i) {
-  saveCode();
+function select(i, savePrevious = true) {
+  const previousProblem = visibleProblems[cur];
+  if (savePrevious) saveCode(previousProblem);
   cur = i;
   const p = visibleProblems[i];
   renderTabs();
