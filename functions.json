@@ -4,7 +4,7 @@
     "category": "Functions",
     "title": "Q1. Calculate nCr Using a Factorial Function",
     "statement": "Define a function named factorial. It takes an integer n and returns n!. The function should only accept n >= 0. Use it to calculate nCr = n! / (r! * (n-r)!). If nCr cannot be calculated because n or r is invalid, print 0.\n\nInput: two integers n and r separated by a space.\nOutput: nCr, or 0 when 0 <= r <= n is not satisfied.",
-    "template": "#include <stdio.h>\n\nlong long factorial(int n) {\n    // Return n! for n >= 0.\n}\n\nint main(void) {\n    int n, r;\n    scanf(\"%d %d\", &n, &r);\n    // Validate the inputs and print nCr.\n    return 0;\n}\n",
+    "template": "#include <stdio.h>\n\nint main(void) {\n    return 0;\n}\n",
     "tests": [
       {"visible": true, "input": "10 5\n", "expected": "252"},
       {"visible": true, "input": "5 10\n", "expected": "0"},
@@ -18,7 +18,7 @@
     "category": "Functions",
     "title": "Q2. Roots of a Quadratic Equation",
     "statement": "Given the coefficients a, b and c of a quadratic equation ax^2 + bx + c = 0, write a program to find both roots. You may use math.h. Print real roots with exactly 2 digits after the decimal point. If the roots are complex, print -1.\n\nInput: three floating-point values a, b and c.\nOutput: the two real roots in descending order, separated by a space, or -1 for complex roots. Assume a is not 0.",
-    "template": "#include <stdio.h>\n#include <math.h>\n\nint main(void) {\n    double a, b, c;\n    scanf(\"%lf %lf %lf\", &a, &b, &c);\n    // Find and print the roots.\n    return 0;\n}\n",
+    "template": "#include <stdio.h>\n#include <math.h>\n\nint main(void) {\n    return 0;\n}\n",
     "tests": [
       {"visible": true, "input": "1 -5 6\n", "expected": "3.00 2.00"},
       {"visible": true, "input": "1 2 5\n", "expected": "-1"},
@@ -31,7 +31,7 @@
     "category": "Functions",
     "title": "Q3. Average of Each Matrix Row",
     "statement": "Write a C program to input an n x m two-dimensional array. Write a function to calculate the average of each row and store the averages in a one-dimensional result array. Since an array cannot be returned directly from a function, pass the result array as a parameter.\n\nInput: n and m followed by the matrix.\nOutput: the average of each row, each with exactly 2 digits after the decimal point.",
-    "template": "#include <stdio.h>\n\nvoid rowAverages(int n, int m, int a[n][m], double result[n]) {\n    // Store the average of each row in result.\n}\n\nint main(void) {\n    int n, m;\n    scanf(\"%d %d\", &n, &m);\n    return 0;\n}\n",
+    "template": "#include <stdio.h>\n\nint main(void) {\n    return 0;\n}\n",
     "tests": [
       {"visible": true, "input": "2 3\n1 2 3\n4 5 6\n", "expected": "2.00 5.00"},
       {"visible": true, "input": "1 4\n1 2 6 7\n", "expected": "4.00"},
@@ -43,7 +43,7 @@
     "category": "Functions",
     "title": "Q4. Operations on Complex Numbers",
     "statement": "Create a structure named Complex_num with real and imaginary parts. Write functions add, subtract and multiply. Each function takes two Complex_num values and returns a Complex_num. Print the sum, difference and product on three separate lines as real and imaginary parts.\n\nInput: two lines, each containing the real and imaginary integer parts of a complex number.\nOutput: addition, subtraction and multiplication, one result per line.",
-    "template": "#include <stdio.h>\n\ntypedef struct {\n    int real;\n    int imaginary;\n} Complex_num;\n\nComplex_num add(Complex_num x, Complex_num y) {\n    // Return x + y.\n}\n\nComplex_num subtract(Complex_num x, Complex_num y) {\n    // Return x - y.\n}\n\nComplex_num multiply(Complex_num x, Complex_num y) {\n    // Return x * y.\n}\n\nint main(void) {\n    return 0;\n}\n",
+    "template": "#include <stdio.h>\n\nint main(void) {\n    return 0;\n}\n",
     "tests": [
       {"visible": true, "input": "12 2\n14 11\n", "expected": "26 13\n-2 -9\n146 160"},
       {"visible": false, "input": "0 0\n5 -3\n", "expected": "5 -3\n-5 3\n0 0"},
@@ -55,7 +55,7 @@
     "category": "Functions",
     "title": "Q5. Add Two Binary Numbers Using Functions",
     "statement": "Write a program to add two binary numbers and print the result in binary as well. Use functions to perform the conversion or binary addition.\n\nInput: the first binary number on the first line and the second binary number on the second line.\nOutput: their sum in binary.",
-    "template": "#include <stdio.h>\n\nint binaryToDecimal(long long binary) {\n    // Convert a binary number to decimal.\n}\n\nvoid printBinary(int value) {\n    // Print value in binary.\n}\n\nint main(void) {\n    long long first, second;\n    scanf(\"%lld %lld\", &first, &second);\n    return 0;\n}\n",
+    "template": "#include <stdio.h>\n\nint main(void) {\n    return 0;\n}\n",
     "tests": [
       {"visible": true, "input": "110\n10\n", "expected": "1000"},
       {"visible": false, "input": "0\n0\n", "expected": "0"},
@@ -68,7 +68,7 @@
     "category": "Functions",
     "title": "Q6. GCD and LCM of Two Numbers",
     "statement": "Write functions to find the greatest common divisor (GCD) and least common multiple (LCM) of two integers. Take the two numbers as input and print the GCD followed by the LCM.\n\nInput: two integers separated by a space.\nOutput: GCD and LCM separated by a space.",
-    "template": "#include <stdio.h>\n\nint gcd(int a, int b) {\n    // Return the greatest common divisor.\n}\n\nint lcm(int a, int b) {\n    // Return the least common multiple.\n}\n\nint main(void) {\n    int a, b;\n    scanf(\"%d %d\", &a, &b);\n    return 0;\n}\n",
+    "template": "#include <stdio.h>\n\nint main(void) {\n    return 0;\n}\n",
     "tests": [
       {"visible": true, "input": "12 18\n", "expected": "6 36"},
       {"visible": true, "input": "7 5\n", "expected": "1 35"},
