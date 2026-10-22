@@ -1,7 +1,7 @@
 # C Practice site
 
 Question on the left, code editor on the right. Compiling, running and judging all happen on the machine
-that runs `server.js`. Mentees only see the visible test cases. Hidden tests stay in `problems.json` on
+that runs `server.js`. Mentees only see the visible test cases. Hidden tests stay in the topic JSON files on
 your laptop; the browser only receives Accepted / Wrong Answer / etc. for them.
 
 ## Important: run it in Docker if you can
@@ -28,7 +28,9 @@ trust on your own Wi-Fi.
    On macOS/Linux use `\` instead of `^` at the line ends (or put it all on one line).
 4. Open http://localhost:3000 to check it works.
 
-Edit `problems.json` later, then `docker build -t c-practice .`, `docker rm -f c-practice` and run step 3 again.
+Edit the topic JSON files later (`logical.json`, `array.json`, `2d array.json`, `strings.json`,
+`functions.json`, or `sorting.json`), then `docker build -t c-practice .`, `docker rm -f c-practice` and
+run step 3 again.
 
 ## Option B: run directly on the laptop (no Docker)
 
@@ -65,7 +67,7 @@ The site is only available while your laptop is on, awake, online and the server
 
 ## Changing questions or tests
 
-Edit `problems.json`; each test has `"visible": true/false`. Restart the server (or rebuild the Docker image).
+Edit a topic JSON file; each test has `"visible": true/false`. Restart the server (or rebuild the Docker image).
 
 - `compare` (optional, per question): `"contains"` accepts any output containing the expected text
   (used for Q1). Default compares whitespace-separated tokens with a tiny tolerance for decimals.

@@ -29,14 +29,18 @@ function limited(limits, cmd, args) {
   return HAS_PRLIMIT ? ['prlimit', [...limits, cmd, ...args]] : [cmd, args];
 }
 
-const ARRAY_PROBLEMS = JSON.parse(fs.readFileSync(path.join(__dirname, 'problems.json'), 'utf8'))
-  .map((p) => ({ ...p, category: p.category || 'Arrays' }));
+const ARRAY_PROBLEMS = JSON.parse(fs.readFileSync(path.join(__dirname, 'array.json'), 'utf8'))
+  .map((p) => ({ ...p, category: p.category || 'Array' }));
+const TWO_D_ARRAY_PROBLEMS = JSON.parse(fs.readFileSync(path.join(__dirname, '2d array.json'), 'utf8'))
+  .map((p) => ({ ...p, category: p.category || '2D Arrays' }));
+const LOGICAL_PROBLEMS = JSON.parse(fs.readFileSync(path.join(__dirname, 'logical.json'), 'utf8'))
+  .map((p) => ({ ...p, category: p.category || 'Logical' }));
 const STRING_PROBLEMS = JSON.parse(fs.readFileSync(path.join(__dirname, 'strings.json'), 'utf8'));
 const FUNCTION_PROBLEMS = JSON.parse(fs.readFileSync(path.join(__dirname, 'functions.json'), 'utf8'));
 const SORTING_PROBLEMS = JSON.parse(fs.readFileSync(path.join(__dirname, 'sorting.json'), 'utf8'))
   .map((p) => ({ ...p, category: p.category || 'Sorting' }))
   .sort((a, b) => ({ sort7: 1, sort2: 2, sort1: 3, sort3: 4, sort6: 5, sort4: 6, sort5: 7 }[a.id] || 99) - ({ sort7: 1, sort2: 2, sort1: 3, sort3: 4, sort6: 5, sort4: 6, sort5: 7 }[b.id] || 99));
-const PROBLEMS = [...ARRAY_PROBLEMS, ...STRING_PROBLEMS, ...FUNCTION_PROBLEMS, ...SORTING_PROBLEMS];
+const PROBLEMS = [...LOGICAL_PROBLEMS, ...ARRAY_PROBLEMS, ...TWO_D_ARRAY_PROBLEMS, ...STRING_PROBLEMS, ...FUNCTION_PROBLEMS, ...SORTING_PROBLEMS];
 const BY_ID = new Map(PROBLEMS.map((p) => [p.id, p]));
 
 // ---------- tiny job semaphore ----------

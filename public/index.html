@@ -6,8 +6,12 @@
 <title>C Practice</title>
 <style>
   :root {
-    --bg: #0f1115; --panel: #161a21; --panel2: #1c212b; --border: #2a303c;
-    --text: #e6e9ef; --muted: #8b93a3; --accent: #4f8cff; --ok: #3ecf8e; --bad: #ff6b6b; --warn: #f5b942;
+    --bg: #000; --panel: #080808; --panel2: #151515; --border: #2b2b2b;
+    --text: #e6e9ef; --muted: #969696; --accent: #4f8cff; --ok: #3ecf8e; --bad: #ff6b6b; --warn: #f5b942;
+  }
+  body.light {
+    --bg: #f5f5f5; --panel: #fff; --panel2: #ededed; --border: #d2d2d2;
+    --text: #171717; --muted: #626262; --accent: #1769d1; --ok: #16834d; --bad: #c72c41; --warn: #986900;
   }
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
@@ -15,10 +19,11 @@
   header { display: flex; align-items: center; gap: 12px; padding: 8px 14px; background: var(--panel); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
   header h1 { font-size: 15px; margin: 0 8px 0 0; font-weight: 600; }
   #menuToggle { background: transparent; color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 4px 9px; cursor: pointer; font: inherit; font-size: 18px; line-height: 1; }
+  #themeToggle { background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; cursor: pointer; font: inherit; }
   #sections { display: flex; gap: 6px; }
   .section { background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 6px; padding: 4px 12px; cursor: pointer; font: inherit; }
   .section.active { color: #fff; border-color: var(--accent); background: rgba(79,140,255,.2); }
-  #tabs { display: none; }
+  #tabs { display: flex; gap: 6px; flex-wrap: wrap; }
   .tab { background: var(--panel2); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 4px 12px; cursor: pointer; font: inherit; }
   .tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
   main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(280px, 42%) 1fr; }
@@ -40,7 +45,8 @@
   #reset { background: transparent; color: var(--muted); border: 1px solid var(--border); font-weight: 400; }
   #editorWrap { flex: 1 1 55%; min-height: 160px; position: relative; }
   #editor, #fallback { position: absolute; inset: 0; }
-  #fallback { width: 100%; height: 100%; background: #1e1e1e; color: #ddd; border: 0; padding: 10px; font: 14px/1.5 ui-monospace, Menlo, Consolas, monospace; resize: none; tab-size: 4; display: none; }
+  #fallback { width: 100%; height: 100%; background: #080808; color: #ddd; border: 0; padding: 10px; font: 14px/1.5 ui-monospace, Menlo, Consolas, monospace; resize: none; tab-size: 4; display: none; }
+  body.light #fallback { background: #fff; color: #171717; }
   #bottom { flex: 1 1 45%; min-height: 140px; display: flex; flex-direction: column; border-top: 1px solid var(--border); background: var(--panel); }
   #btabs { display: flex; gap: 2px; padding: 6px 10px 0; }
   .btab { padding: 4px 12px; cursor: pointer; border: 0; background: transparent; color: var(--muted); font: inherit; border-bottom: 2px solid transparent; }
@@ -78,12 +84,13 @@
   @media (max-width: 700px) { main { grid-template-columns: 1fr; grid-template-rows: 42% 58%; } #left { border-right: 0; border-bottom: 1px solid var(--border); } }
 </style>
 </head>
-<body>
+<body class="sidebar-open">
 <header>
   <button id="menuToggle" title="Open topics" aria-label="Open topics">☰</button>
   <h1>C Practice</h1>
   <div id="sections"></div>
   <div id="tabs"></div>
+  <button id="themeToggle" title="Switch color mode"></button>
 </header>
 
 <aside id="sidebar" aria-label="Practice topics">
@@ -140,6 +147,12 @@ function el(tag, cls, text) {
 function codeKey(id) { return 'code-' + id; }
 function store(k, v) { try { localStorage.setItem(k, v); } catch (_) {} }
 function load(k) { try { return localStorage.getItem(k); } catch (_) { return null; } }
+function applyTheme() {
+  const light = load('theme') === 'light';
+  document.body.classList.toggle('light', light);
+  $('themeToggle').textContent = light ? 'Dark mode' : 'White mode';
+  if (typeof monaco !== 'undefined' && monaco.editor) monaco.editor.setTheme(light ? 'vs' : 'vs-dark');
+}
 
 /* ---------- editor (Monaco with textarea fallback) ---------- */
 function makeFallback() {
@@ -168,7 +181,7 @@ function initEditor() {
       if (settled) return;
       settled = true; clearTimeout(timer);
       const m = monaco.editor.create($('editor'), {
-        value: DEFAULT_TEMPLATE, language: 'c', theme: 'vs-dark',
+        value: DEFAULT_TEMPLATE, language: 'c', theme: load('theme') === 'light' ? 'vs' : 'vs-dark',
         automaticLayout: true, fontSize: 14, minimap: { enabled: false },
         scrollBeyondLastLine: false, tabSize: 4, insertSpaces: true,
       });
@@ -219,7 +232,7 @@ function renderSections() {
 function renderSidebar() {
   const root = $('topicGroups'); root.textContent = '';
   const groups = [
-    { label: 'Intro to C', topics: [['Arrays', 'Array'], ['Strings', 'Strings'], ['Functions', 'Functions']] },
+    { label: 'Basic Logic Questions', topics: [['Logical', 'Basic Logic'], ['Array', 'Array'], ['2D Arrays', '2D Arrays'], ['Strings', 'Strings'], ['Functions', 'Functions']] },
     { label: 'Today', topics: [['Sorting', 'Sorting']] },
   ];
   groups.forEach((group) => {
@@ -234,7 +247,7 @@ function renderSidebar() {
         saveCode(visibleProblems[cur]);
         section = name;
         visibleProblems = problems.filter((p) => p.category === section);
-        cur = 0;
+        cur = section === 'Sorting' ? Math.min(4, visibleProblems.length - 1) : 0;
         renderSections();
         renderSidebar();
         select(0, false);
@@ -299,6 +312,8 @@ document.querySelectorAll('.btab').forEach((b) => b.onclick = () => showPane(b.d
 $('menuToggle').onclick = () => document.body.classList.add('sidebar-open');
 $('sidebarClose').onclick = () => document.body.classList.remove('sidebar-open');
 $('sidebarBackdrop').onclick = () => document.body.classList.remove('sidebar-open');
+$('themeToggle').onclick = () => { store('theme', load('theme') === 'light' ? 'dark' : 'light'); applyTheme(); };
+applyTheme();
 
 /* ---------- API calls ---------- */
 const LABEL = { AC: 'Accepted', OK: 'Ran OK', WA: 'Wrong Answer', RE: 'Runtime Error', CE: 'Compile Error', TLE: 'Time Limit Exceeded', OLE: 'Output Limit Exceeded' };
@@ -396,10 +411,11 @@ $('reset').onclick = () => {
 (async function () {
   problems = await (await api('/api/problems')).json();
   visibleProblems = problems.filter((p) => p.category === section);
+  cur = section === 'Sorting' ? Math.min(4, visibleProblems.length - 1) : 0;
   await initEditor();
   renderSections();
   renderSidebar();
-  select(0);
+  select(cur);
 })();
 </script>
 </body>
