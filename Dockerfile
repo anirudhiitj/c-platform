@@ -12,9 +12,15 @@ COPY package.json ./
 RUN npm install --omit=dev
 COPY . .
 
-# Hidden test cases live in problems.json. Only root (the server) may read it;
-# student programs run as the unprivileged "nobody" user and cannot open it.
-RUN chmod 600 /app/problems.json && chmod 644 /app/server.js
+# Hidden test cases live in the topic JSON files. Only root (the server) may
+# read them; student programs run as the unprivileged "nobody" user.
+RUN chmod 600 /app/array.json \
+    "/app/2d array.json" \
+    /app/functions.json \
+    /app/logical.json \
+    /app/sorting.json \
+    /app/strings.json \
+    && chmod 644 /app/server.js
 
 ENV PORT=3000
 EXPOSE 3000
