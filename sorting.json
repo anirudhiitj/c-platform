@@ -90,4 +90,16 @@
       {"visible": false, "input": "3\nalpha\nAlpine\nbeta\n", "expected": "Alpine\nalpha\nbeta"}
     ]
   }
+,
+  {
+    "id": "sort8", "category": "Recursion", "title": "Q4. Sunrise Express: Summer Revenue Report",
+    "statement": "For N days, read tickets sold t[i], distance per ticket d[i], rate r, and K. Compute rev[i] = t[i] * d[i] * r. Print totalRevenue, averageRevenue, all revenues sorted ascending using Bubble Sort, then the top K revenues from highest to lowest using recursion. Print every number with two decimal places.\n\nInput: N; N ticket counts; N distances; rate r; K.",
+    "tests": [
+      {"visible": true, "input": "3\n10 20 30\n100 50 200\n0.5\n2\n", "expected": "4000.00\n1333.33\n500.00 500.00 3000.00\n3000.00 500.00"},
+      {"visible": true, "input": "1\n100\n50\n2.0\n1\n", "expected": "10000.00\n10000.00\n10000.00\n10000.00"},
+      {"visible": false, "input": "4\n0 0 0 0\n100 100 100 100\n1.0\n3\n", "expected": "0.00\n0.00\n0.00 0.00 0.00 0.00\n0.00 0.00 0.00"},
+      {"visible": false, "input": "3\n0 10 0\n100 200 300\n1.0\n2\n", "expected": "2000.00\n666.67\n0.00 0.00 2000.00\n2000.00 0.00"},
+      {"visible": false, "input": "5\n10 15 20 25 30\n10 10 10 10 10\n1.0\n5\n", "expected": "1000.00\n200.00\n100.00 150.00 200.00 250.00 300.00\n300.00 250.00 200.00 150.00 100.00"}
+    ]
+  }
 ]

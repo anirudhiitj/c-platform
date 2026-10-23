@@ -213,7 +213,7 @@ function renderTabs() {
 
 function renderSections() {
   const s = $('sections'); s.textContent = '';
-  ['Sorting'].forEach((name) => {
+  ['Sorting', 'Recursion', 'Revision'].forEach((name) => {
     const b = el('button', 'section' + (name === section ? ' active' : ''), name);
     b.onclick = () => {
       if (name === section) return;
@@ -233,7 +233,7 @@ function renderSidebar() {
   const root = $('topicGroups'); root.textContent = '';
   const groups = [
     { label: 'Basic Logic Questions', topics: [['Logical', 'Basic Logic'], ['Array', 'Array'], ['2D Arrays', '2D Arrays'], ['Strings', 'Strings'], ['Functions', 'Functions']] },
-    { label: 'Today', topics: [['Sorting', 'Sorting']] },
+    { label: 'Today', topics: [['Sorting', 'Sorting'], ['Recursion', 'Recursion'], ['Revision', 'Revision']] },
   ];
   groups.forEach((group) => {
     const wrap = el('div', 'topicGroup');
@@ -247,7 +247,7 @@ function renderSidebar() {
         saveCode(visibleProblems[cur]);
         section = name;
         visibleProblems = problems.filter((p) => p.category === section);
-        cur = section === 'Sorting' ? Math.min(4, visibleProblems.length - 1) : 0;
+        cur = 0;
         renderSections();
         renderSidebar();
         select(0, false);
@@ -411,7 +411,7 @@ $('reset').onclick = () => {
 (async function () {
   problems = await (await api('/api/problems')).json();
   visibleProblems = problems.filter((p) => p.category === section);
-  cur = section === 'Sorting' ? Math.min(4, visibleProblems.length - 1) : 0;
+  cur = 0;
   await initEditor();
   renderSections();
   renderSidebar();

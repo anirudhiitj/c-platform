@@ -37,10 +37,14 @@ const LOGICAL_PROBLEMS = JSON.parse(fs.readFileSync(path.join(__dirname, 'logica
   .map((p) => ({ ...p, category: p.category || 'Logical' }));
 const STRING_PROBLEMS = JSON.parse(fs.readFileSync(path.join(__dirname, 'strings.json'), 'utf8'));
 const FUNCTION_PROBLEMS = JSON.parse(fs.readFileSync(path.join(__dirname, 'functions.json'), 'utf8'));
+const RECURSION_PROBLEMS = JSON.parse(fs.readFileSync(path.join(__dirname, 'recursion.json'), 'utf8'))
+  .map((p) => ({ ...p, category: p.category || 'Recursion' }));
+const REVISION_PROBLEMS = JSON.parse(fs.readFileSync(path.join(__dirname, 'revision.json'), 'utf8'))
+  .map((p) => ({ ...p, category: p.category || 'Revision' }));
 const SORTING_PROBLEMS = JSON.parse(fs.readFileSync(path.join(__dirname, 'sorting.json'), 'utf8'))
   .map((p) => ({ ...p, category: p.category || 'Sorting' }))
   .sort((a, b) => ({ sort7: 1, sort2: 2, sort1: 3, sort3: 4, sort6: 5, sort4: 6, sort5: 7 }[a.id] || 99) - ({ sort7: 1, sort2: 2, sort1: 3, sort3: 4, sort6: 5, sort4: 6, sort5: 7 }[b.id] || 99));
-const PROBLEMS = [...LOGICAL_PROBLEMS, ...ARRAY_PROBLEMS, ...TWO_D_ARRAY_PROBLEMS, ...STRING_PROBLEMS, ...FUNCTION_PROBLEMS, ...SORTING_PROBLEMS];
+const PROBLEMS = [...LOGICAL_PROBLEMS, ...ARRAY_PROBLEMS, ...TWO_D_ARRAY_PROBLEMS, ...STRING_PROBLEMS, ...FUNCTION_PROBLEMS, ...SORTING_PROBLEMS, ...RECURSION_PROBLEMS, ...REVISION_PROBLEMS];
 const BY_ID = new Map(PROBLEMS.map((p) => [p.id, p]));
 
 // ---------- tiny job semaphore ----------
@@ -170,6 +174,15 @@ function tokEq(a, b) {
 function matches(expected, actual, mode) {
   const e = toks(expected), a = toks(actual);
   if (mode === 'contains') return a.join(' ').includes(e.join(' '));
+  if (mode === 'unordered-lines') {
+    const normalize = (s) => s.replace(/\r/g, '').trim().split(/\n+/).map((line) => line.trim().replace(/\s+/g, ' ')).filter(Boolean).sort();
+    const linesEqual = (x, y) => x.length === y.length && x.every((line, i) => line === y[i]);
+    return linesEqual(normalize(expected), normalize(actual));
+  }
+  if (mode === 'one-of') {
+    const actualText = actual.replace(/\r/g, '').trim();
+    return expected.replace(/\r/g, '').trim().split(/\n+/).some((option) => option.trim() === actualText);
+  }
   if (e.length !== a.length) return false;
   return e.every((t, i) => tokEq(a[i], t));
 }
