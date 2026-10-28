@@ -213,7 +213,7 @@ function renderTabs() {
 
 function renderSections() {
   const s = $('sections'); s.textContent = '';
-  ['Sorting', 'Recursion', 'Revision'].forEach((name) => {
+  ['Sorting', 'Recursion', 'Pointers', 'Revision'].forEach((name) => {
     const b = el('button', 'section' + (name === section ? ' active' : ''), name);
     b.onclick = () => {
       if (name === section) return;
@@ -233,7 +233,7 @@ function renderSidebar() {
   const root = $('topicGroups'); root.textContent = '';
   const groups = [
     { label: 'Basic Logic Questions', topics: [['Logical', 'Basic Logic'], ['Array', 'Array'], ['2D Arrays', '2D Arrays'], ['Strings', 'Strings'], ['Functions', 'Functions']] },
-    { label: 'Today', topics: [['Sorting', 'Sorting'], ['Recursion', 'Recursion'], ['Revision', 'Revision']] },
+    { label: 'Today', topics: [['Sorting', 'Sorting'], ['Recursion', 'Recursion'], ['Pointers', 'Pointers'], ['Revision', 'Revision']] },
   ];
   groups.forEach((group) => {
     const wrap = el('div', 'topicGroup');
