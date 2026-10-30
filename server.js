@@ -1,5 +1,8 @@
 'use strict';
 const express = require('express');
+const http = require('http');
+const crypto = require('crypto');
+const WebSocket = require('ws');
 const { spawn } = require('child_process');
 const fs = require('fs');
 const fsp = require('fs/promises');
@@ -286,7 +289,85 @@ app.post('/api/submit', cooldown, async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
+// ---------- live share ----------
+// Rooms are intentionally ephemeral: the shared document lives in memory and disappears
+// when the last participant leaves or after the idle timeout.
+const liveRooms = new Map();
+const LIVE_ROOM_TTL = 30 * 60 * 1000;
+const LIVE_MAX_PARTICIPANTS = 2;
+
+function liveId() {
+  return crypto.randomBytes(6).toString('base64url');
+}
+
+function sendLive(ws, message) {
+  if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(message));
+}
+
+function broadcastLive(room, message, except) {
+  room.clients.forEach((client) => { if (client !== except) sendLive(client, message); });
+}
+
+function removeLiveClient(ws) {
+  const room = ws.liveRoom;
+  if (!room) return;
+  room.clients.delete(ws);
+  ws.liveRoom = null;
+  room.lastActive = Date.now();
+  broadcastLive(room, { type: 'presence', count: room.clients.size });
+  if (!room.clients.size) {
+    room.expireTimer = setTimeout(() => {
+      if (!room.clients.size && liveRooms.get(room.id) === room) liveRooms.delete(room.id);
+    }, LIVE_ROOM_TTL);
+  }
+}
+
+const server = http.createServer(app);
+const liveWss = new WebSocket.Server({ noServer: true });
+server.on('upgrade', (req, socket, head) => {
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  if (url.pathname !== '/live' || (ACCESS_CODE && url.searchParams.get('accessCode') !== ACCESS_CODE)) {
+    socket.destroy();
+    return;
+  }
+  liveWss.handleUpgrade(req, socket, head, (ws) => liveWss.emit('connection', ws, req));
+});
+
+liveWss.on('connection', (ws) => {
+  ws.on('message', (raw) => {
+    let message;
+    try { message = JSON.parse(raw.toString()); } catch (_) { return; }
+    if (message.type === 'join') {
+      const id = typeof message.session === 'string' ? message.session.slice(0, 32) : '';
+      if (!id || !/^[A-Za-z0-9_-]{6,32}$/.test(id)) return sendLive(ws, { type: 'error', message: 'Invalid live session.' });
+      let room = liveRooms.get(id);
+      if (!room) {
+        room = { id, code: typeof message.code === 'string' ? message.code.slice(0, MAX_CODE) : '', problemId: message.problemId, clients: new Set(), lastActive: Date.now() };
+        liveRooms.set(id, room);
+      }
+      if (room.clients.size >= LIVE_MAX_PARTICIPANTS) return sendLive(ws, { type: 'error', message: 'This live session already has two participants.' });
+      if (room.expireTimer) clearTimeout(room.expireTimer);
+      room.clients.add(ws);
+      room.lastActive = Date.now();
+      ws.liveRoom = room;
+      sendLive(ws, { type: 'state', code: room.code, problemId: room.problemId, count: room.clients.size });
+      broadcastLive(room, { type: 'presence', count: room.clients.size }, ws);
+      return;
+    }
+    const room = ws.liveRoom;
+    if (!room) return;
+    room.lastActive = Date.now();
+    if (message.type === 'change' && typeof message.code === 'string') {
+      room.code = message.code.slice(0, MAX_CODE);
+      if (message.problemId) room.problemId = message.problemId;
+      broadcastLive(room, { type: 'change', code: room.code, problemId: room.problemId }, ws);
+    }
+  });
+  ws.on('close', () => removeLiveClient(ws));
+  ws.on('error', () => removeLiveClient(ws));
+});
+
+server.listen(PORT, () => {
   console.log(`C practice running on http://localhost:${PORT}`);
   console.log(`  sandbox user: ${IS_ROOT ? 'nobody (uid ' + SANDBOX_UID + ')' : 'same user as this server (use Docker for isolation)'}`);
   console.log(`  resource limits (prlimit): ${HAS_PRLIMIT ? 'on' : 'off, only the time limit applies'}`);

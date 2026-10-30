@@ -38,6 +38,9 @@
   #right { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
   #toolbar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--panel); border-bottom: 1px solid var(--border); }
   #toolbar .spacer { flex: 1; }
+  #liveStatus { color: var(--muted); font-size: 12px; white-space: nowrap; }
+  #liveStatus.connected { color: var(--ok); }
+  #liveShare { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
   button.act { border: 0; border-radius: 6px; padding: 6px 16px; font: inherit; font-weight: 600; cursor: pointer; color: #fff; }
   button.act:disabled { opacity: .5; cursor: wait; }
   #run { background: #394156; }
@@ -110,7 +113,9 @@
   <section id="right">
     <div id="toolbar">
       <span class="muted">main.c (C, gcc)</span>
+      <span id="liveStatus">Not sharing</span>
       <span class="spacer"></span>
+      <button class="act" id="liveShare" title="Create or copy a live editing session">Live Share</button>
       <button class="act" id="reset" title="Restore starter code">Reset</button>
       <button class="act" id="run">Run</button>
       <button class="act" id="submit">Submit</button>
@@ -136,6 +141,7 @@
 <script>
 const DEFAULT_TEMPLATE = '#include <stdio.h>\n\nint main(void) {\n    \n    return 0;\n}\n';
 let problems = [], visibleProblems = [], cur = 0, editor = null, section = 'Sorting';
+let liveSocket = null, liveSession = new URLSearchParams(location.search).get('live'), liveApplying = false;
 
 const $ = (id) => document.getElementById(id);
 function el(tag, cls, text) {
@@ -166,7 +172,7 @@ function makeFallback() {
       ta.selectionStart = ta.selectionEnd = s + 4;
     }
   });
-  ta.addEventListener('input', () => saveCode());
+  ta.addEventListener('input', () => { saveCode(); publishLive(); });
   return { getValue: () => ta.value, setValue: (v) => { ta.value = v; } };
 }
 
@@ -185,7 +191,7 @@ function initEditor() {
         automaticLayout: true, fontSize: 14, minimap: { enabled: false },
         scrollBeyondLastLine: false, tabSize: 4, insertSpaces: true,
       });
-      m.onDidChangeModelContent(() => saveCode());
+      m.onDidChangeModelContent(() => { saveCode(); publishLive(); });
       editor = { getValue: () => m.getValue(), setValue: (v) => m.setValue(v) };
       resolve();
     }, fallback);
@@ -194,6 +200,65 @@ function initEditor() {
 
 function saveCode(problem = visibleProblems[cur]) {
   if (editor && problem) store(codeKey(problem.id), editor.getValue());
+}
+
+function setEditorValue(value) {
+  liveApplying = true;
+  editor.setValue(value);
+  liveApplying = false;
+}
+
+function publishLive() {
+  if (liveApplying || !liveSocket || liveSocket.readyState !== WebSocket.OPEN || !visibleProblems[cur]) return;
+  liveSocket.send(JSON.stringify({ type: 'change', code: editor.getValue(), problemId: visibleProblems[cur].id }));
+}
+
+function updateLiveStatus(text, connected = false) {
+  $('liveStatus').textContent = text;
+  $('liveStatus').classList.toggle('connected', connected);
+}
+
+function connectLive() {
+  if (!liveSession) return;
+  const access = load('access-code');
+  liveSocket = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/live' + (access ? '?accessCode=' + encodeURIComponent(access) : ''));
+  liveSocket.onopen = () => {
+    updateLiveStatus('Connecting…');
+    liveSocket.send(JSON.stringify({ type: 'join', session: liveSession, code: editor.getValue(), problemId: visibleProblems[cur] && visibleProblems[cur].id }));
+  };
+  liveSocket.onmessage = (event) => {
+    let message; try { message = JSON.parse(event.data); } catch (_) { return; }
+    if (message.type === 'error') { updateLiveStatus(message.message); liveSocket.close(); return; }
+    if (message.type === 'state') {
+      if (message.problemId && visibleProblems.some((p) => p.id === message.problemId)) {
+        const next = visibleProblems.findIndex((p) => p.id === message.problemId);
+        if (next !== cur) { liveApplying = true; select(next, false); liveApplying = false; }
+      }
+      if (typeof message.code === 'string' && message.code !== editor.getValue()) setEditorValue(message.code);
+      updateLiveStatus('Live • ' + message.count + '/2', true);
+    }
+    if (message.type === 'presence') updateLiveStatus('Live • ' + message.count + '/2', true);
+    if (message.type === 'change') {
+      if (message.problemId && visibleProblems.some((p) => p.id === message.problemId)) {
+        const next = visibleProblems.findIndex((p) => p.id === message.problemId);
+        if (next !== cur) { liveApplying = true; select(next, false); liveApplying = false; }
+      }
+      if (typeof message.code === 'string' && message.code !== editor.getValue()) setEditorValue(message.code);
+    }
+  };
+  liveSocket.onclose = () => updateLiveStatus('Live session disconnected');
+  liveSocket.onerror = () => updateLiveStatus('Live session unavailable');
+}
+
+async function startLiveShare() {
+  if (!liveSession) {
+    liveSession = crypto.randomUUID().replace(/-/g, '').slice(0, 12);
+    const url = new URL(location.href); url.searchParams.set('live', liveSession); history.replaceState(null, '', url);
+    connectLive();
+  }
+  const invite = location.href;
+  try { await navigator.clipboard.writeText(invite); alert('Live session link copied. Send it to one person.'); }
+  catch (_) { prompt('Copy this live session link:', invite); }
 }
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') saveCode();
@@ -293,7 +358,8 @@ function select(i, savePrevious = true) {
   $('hiddenNote').textContent = p.hiddenCount
     ? p.hiddenCount + ' hidden test case' + (p.hiddenCount > 1 ? 's' : '') + ' will also be checked when you submit.'
     : '';
-  editor.setValue(load(codeKey(p.id)) || p.template || DEFAULT_TEMPLATE);
+  setEditorValue(load(codeKey(p.id)) || p.template || DEFAULT_TEMPLATE);
+  publishLive();
   $('stdin').value = p.tests.length ? p.tests[0].input : '';
   $('paneOutput').textContent = '';
   $('paneOutput').appendChild(el('span', 'muted', 'Press Run to execute your program with the custom input.'));
@@ -313,6 +379,7 @@ $('menuToggle').onclick = () => document.body.classList.add('sidebar-open');
 $('sidebarClose').onclick = () => document.body.classList.remove('sidebar-open');
 $('sidebarBackdrop').onclick = () => document.body.classList.remove('sidebar-open');
 $('themeToggle').onclick = () => { store('theme', load('theme') === 'light' ? 'dark' : 'light'); applyTheme(); };
+$('liveShare').onclick = startLiveShare;
 applyTheme();
 
 /* ---------- API calls ---------- */
@@ -413,6 +480,7 @@ $('reset').onclick = () => {
   visibleProblems = problems.filter((p) => p.category === section);
   cur = 0;
   await initEditor();
+  if (liveSession) connectLive();
   renderSections();
   renderSidebar();
   select(cur);
