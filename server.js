@@ -45,6 +45,7 @@ const RECURSION_PROBLEMS = JSON.parse(fs.readFileSync(path.join(__dirname, 'recu
 const REVISION_PROBLEMS = JSON.parse(fs.readFileSync(path.join(__dirname, 'revision.json'), 'utf8'))
   .map((p) => ({ ...p, category: p.category || 'Revision' }));
 const MOCK_QUIZ = JSON.parse(fs.readFileSync(path.join(__dirname, 'mock-quiz.json'), 'utf8'));
+const POINTER_THEORY = JSON.parse(fs.readFileSync(path.join(__dirname, 'pointer-theory.json'), 'utf8'));
 const MOCK_EXPLANATIONS = {
   mq1: 'The recurrence gives fun(4)=5 and fun(5)=8. fun(4) makes 9 calls including the base-case calls; negative inputs also satisfy n <= 1, so it terminates for every integer.',
   mq2: 'A 3x3 array is contiguous in row-major order, so offsets 5 and 4 reach 6 and 5. pp++ changes pp, not p; adding 3 to *pp moves p from a[0][0] to a[1][0].',
@@ -245,8 +246,7 @@ app.get('/api/mock-quiz', (req, res) => {
 });
 
 app.get('/api/pointer-theory', (req, res) => {
-  res.json(MOCK_QUIZ
-    .filter((q) => POINTER_THEORY_IDS.has(q.id))
+  res.json(POINTER_THEORY
     .map(({ answer, answerText, ...question }) => question));
 });
 
@@ -254,11 +254,12 @@ app.post('/api/mock-quiz/grade', (req, res) => {
   const answers = req.body && req.body.answers;
   if (!answers || typeof answers !== 'object') return res.status(400).json({ error: 'Answers are required.' });
   const requestedIds = Array.isArray(req.body.questionIds) ? new Set(req.body.questionIds.map(String)) : null;
-  const pointerTheoryOnly = requestedIds && requestedIds.size > 0 && [...requestedIds].every((id) => POINTER_THEORY_IDS.has(id));
+  const pointerTheoryOnly = requestedIds && requestedIds.size > 0 && [...requestedIds].every((id) => id.startsWith('pt'));
   if (!pointerTheoryOnly && req.get('x-mock-quiz-key') !== MOCK_QUIZ_KEY) return res.status(401).json({ error: 'Mock quiz key required.' });
   let score = 0, total = 0;
   const review = [];
-  MOCK_QUIZ.forEach((q) => {
+  const questionBank = pointerTheoryOnly ? POINTER_THEORY : MOCK_QUIZ;
+  questionBank.forEach((q) => {
     if (requestedIds && !requestedIds.has(q.id)) return;
     total += q.marks;
     const selected = [...(answers[q.id] || [])].map(Number).sort();

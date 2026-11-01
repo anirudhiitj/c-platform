@@ -373,7 +373,7 @@ function renderQuiz(quiz = mockQuiz, heading = 'Mock Quiz') {
     const answers = {};
     quiz.forEach((q) => { answers[q.id] = q.options ? [...form.querySelectorAll('input[name="' + q.id + '"]:checked')].map((x) => Number(x.value)) : (form.querySelector('[name="' + q.id + '"]') || {}).value || ''; });
     const gradeHeaders = {'Content-Type':'application/json'};
-    if (!quiz.every((q) => ['mq1', 'mq2', 'mq3', 'mq4', 'mq9', 'mq10'].includes(q.id))) gradeHeaders['x-mock-quiz-key'] = sessionStorage.getItem('mock-quiz-key');
+    if (!quiz.every((q) => q.id.startsWith('pt'))) gradeHeaders['x-mock-quiz-key'] = sessionStorage.getItem('mock-quiz-key');
     const r = await fetch('/api/mock-quiz/grade', { method: 'POST', headers: gradeHeaders, body: JSON.stringify({ answers, questionIds: quiz.map((q) => q.id) }) });
     const j = await r.json();
     if (!r.ok) { result.textContent = j.error; return; }
