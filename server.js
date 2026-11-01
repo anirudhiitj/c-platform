@@ -58,6 +58,7 @@ const MOCK_EXPLANATIONS = {
   mq8: 'The recursive updates change the pointed-to value at each level; evaluating the return expression from the deepest call produces 42 and leaves a equal to 9.',
 };
 const MOCK_QUIZ_KEY = '18122022';
+const POINTER_THEORY_IDS = new Set(['mq1', 'mq2', 'mq3', 'mq4', 'mq9', 'mq10']);
 const SORTING_PROBLEMS = JSON.parse(fs.readFileSync(path.join(__dirname, 'sorting.json'), 'utf8'))
   .map((p) => ({ ...p, category: p.category || 'Sorting' }))
   .sort((a, b) => ({ sort7: 1, sort2: 2, sort1: 3, sort3: 4, sort6: 5, sort4: 6, sort5: 7 }[a.id] || 99) - ({ sort7: 1, sort2: 2, sort1: 3, sort3: 4, sort6: 5, sort4: 6, sort5: 7 }[b.id] || 99));
@@ -243,11 +244,18 @@ app.get('/api/mock-quiz', (req, res) => {
   res.json(MOCK_QUIZ.map(({ answer, answerText, ...question }) => question));
 });
 
+app.get('/api/pointer-theory', (req, res) => {
+  res.json(MOCK_QUIZ
+    .filter((q) => POINTER_THEORY_IDS.has(q.id))
+    .map(({ answer, answerText, ...question }) => question));
+});
+
 app.post('/api/mock-quiz/grade', (req, res) => {
-  if (req.get('x-mock-quiz-key') !== MOCK_QUIZ_KEY) return res.status(401).json({ error: 'Mock quiz key required.' });
   const answers = req.body && req.body.answers;
   if (!answers || typeof answers !== 'object') return res.status(400).json({ error: 'Answers are required.' });
   const requestedIds = Array.isArray(req.body.questionIds) ? new Set(req.body.questionIds.map(String)) : null;
+  const pointerTheoryOnly = requestedIds && requestedIds.size > 0 && [...requestedIds].every((id) => POINTER_THEORY_IDS.has(id));
+  if (!pointerTheoryOnly && req.get('x-mock-quiz-key') !== MOCK_QUIZ_KEY) return res.status(401).json({ error: 'Mock quiz key required.' });
   let score = 0, total = 0;
   const review = [];
   MOCK_QUIZ.forEach((q) => {
