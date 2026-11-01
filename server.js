@@ -45,6 +45,18 @@ const RECURSION_PROBLEMS = JSON.parse(fs.readFileSync(path.join(__dirname, 'recu
 const REVISION_PROBLEMS = JSON.parse(fs.readFileSync(path.join(__dirname, 'revision.json'), 'utf8'))
   .map((p) => ({ ...p, category: p.category || 'Revision' }));
 const MOCK_QUIZ = JSON.parse(fs.readFileSync(path.join(__dirname, 'mock-quiz.json'), 'utf8'));
+const MOCK_EXPLANATIONS = {
+  mq1: 'The recurrence gives fun(4)=5 and fun(5)=8. fun(4) makes 9 calls including the base-case calls; negative inputs also satisfy n <= 1, so it terminates for every integer.',
+  mq2: 'A 3x3 array is contiguous in row-major order, so offsets 5 and 4 reach 6 and 5. pp++ changes pp, not p; adding 3 to *pp moves p from a[0][0] to a[1][0].',
+  mq3: 'An array includes its null terminator while a pointer has pointer size. Pointer indexing is equivalent to dereferencing an offset, and p+5 reaches the terminator. Array names compare addresses, not string contents.',
+  mq4: 'Returning p is valid when it points to the caller’s object. Returning the address of local x creates a dangling pointer after the function returns.',
+  mq9: 'The two merge loops correctly consume both sorted inputs, including the remaining tail of either array.',
+  mq10: 'Hello plus World plus the null terminator needs 11 bytes, but s1 has only 10, so the destination is too small.',
+  mq5: 'The static counter continues across calls: the first call returns 6 and the second returns 9.',
+  mq6: 'Pointer reassignment makes p point to b and then c; following each assignment and update yields the two displayed lines.',
+  mq7: 'p moves to the fourth character, which is replaced by the null terminator; the next character remains U and the array still has nine bytes.',
+  mq8: 'The recursive updates change the pointed-to value at each level; evaluating the return expression from the deepest call produces 42 and leaves a equal to 9.',
+};
 const MOCK_QUIZ_KEY = '18122022';
 const SORTING_PROBLEMS = JSON.parse(fs.readFileSync(path.join(__dirname, 'sorting.json'), 'utf8'))
   .map((p) => ({ ...p, category: p.category || 'Sorting' }))
@@ -235,12 +247,23 @@ app.post('/api/mock-quiz/grade', (req, res) => {
   if (req.get('x-mock-quiz-key') !== MOCK_QUIZ_KEY) return res.status(401).json({ error: 'Mock quiz key required.' });
   const answers = req.body && req.body.answers;
   if (!answers || typeof answers !== 'object') return res.status(400).json({ error: 'Answers are required.' });
+  const requestedIds = Array.isArray(req.body.questionIds) ? new Set(req.body.questionIds.map(String)) : null;
   let score = 0, total = 0;
+  const review = [];
   MOCK_QUIZ.forEach((q) => {
+    if (requestedIds && !requestedIds.has(q.id)) return;
     total += q.marks;
-    if (q.type === 'multi' && JSON.stringify([...(answers[q.id] || [])].map(Number).sort()) === JSON.stringify(q.answer)) score += q.marks;
+    const selected = [...(answers[q.id] || [])].map(Number).sort();
+    const correct = q.type === 'multi' && JSON.stringify(selected) === JSON.stringify(q.answer);
+    if (correct) score += q.marks;
+    review.push({
+      id: q.id,
+      correct,
+      answer: q.type === 'multi' ? q.answer : (q.answerText || null),
+      explanation: q.explanation || MOCK_EXPLANATIONS[q.id] || 'Review the code and verify each step carefully.',
+    });
   });
-  res.json({ score, total, note: 'Output and coding questions are for self-checking.' });
+  res.json({ score, total, review, note: 'Objective questions are scored. Output and coding questions are shown for self-checking.' });
 });
 
 app.post('/api/run', cooldown, async (req, res) => {
@@ -361,7 +384,14 @@ liveWss.on('connection', (ws) => {
       if (!id || !/^[A-Za-z0-9_-]{6,32}$/.test(id)) return sendLive(ws, { type: 'error', message: 'Invalid live session.' });
       let room = liveRooms.get(id);
       if (!room) {
-        room = { id, code: typeof message.code === 'string' ? message.code.slice(0, MAX_CODE) : '', problemId: message.problemId, clients: new Set(), lastActive: Date.now() };
+        room = {
+          id,
+          code: typeof message.code === 'string' ? message.code.slice(0, MAX_CODE) : '',
+          problemId: typeof message.problemId === 'string' ? message.problemId : null,
+          category: typeof message.category === 'string' ? message.category : null,
+          clients: new Set(),
+          lastActive: Date.now(),
+        };
         liveRooms.set(id, room);
       }
       if (room.clients.size >= LIVE_MAX_PARTICIPANTS) return sendLive(ws, { type: 'error', message: 'This live session already has two participants.' });
@@ -369,7 +399,7 @@ liveWss.on('connection', (ws) => {
       room.clients.add(ws);
       room.lastActive = Date.now();
       ws.liveRoom = room;
-      sendLive(ws, { type: 'state', code: room.code, problemId: room.problemId, count: room.clients.size });
+      sendLive(ws, { type: 'state', code: room.code, problemId: room.problemId, category: room.category, count: room.clients.size });
       broadcastLive(room, { type: 'presence', count: room.clients.size }, ws);
       return;
     }
@@ -378,8 +408,9 @@ liveWss.on('connection', (ws) => {
     room.lastActive = Date.now();
     if (message.type === 'change' && typeof message.code === 'string') {
       room.code = message.code.slice(0, MAX_CODE);
-      if (message.problemId) room.problemId = message.problemId;
-      broadcastLive(room, { type: 'change', code: room.code, problemId: room.problemId }, ws);
+      if (typeof message.problemId === 'string') room.problemId = message.problemId;
+      if (typeof message.category === 'string') room.category = message.category;
+      broadcastLive(room, { type: 'change', code: room.code, problemId: room.problemId, category: room.category }, ws);
     }
   });
   ws.on('close', () => removeLiveClient(ws));

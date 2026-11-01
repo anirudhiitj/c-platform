@@ -38,6 +38,9 @@
   .quizCode { margin: 10px 0; padding: 10px; background: var(--bg); border-radius: 5px; white-space: pre-wrap; font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
   .quizOption { display: block; margin: 7px 0; color: var(--text); }
   .quizOption input { margin-right: 8px; }
+  .quizAnswer { width: 100%; min-height: 90px; resize: vertical; margin-top: 10px; padding: 9px; border: 1px solid var(--border); border-radius: 5px; background: var(--bg); color: var(--text); font: inherit; }
+  .quizReview { margin-top: 10px; padding: 10px; border-left: 3px solid var(--accent); background: var(--bg); }
+  .quizReview.correct { border-left-color: var(--ok); }
   #quizSubmit { background: var(--accent); color: #fff; border: 0; border-radius: 6px; padding: 8px 15px; font: inherit; cursor: pointer; }
   #quizResult { margin-left: 12px; color: var(--ok); }
   #left h2 { margin: 0 0 12px; font-size: 18px; }
@@ -223,7 +226,7 @@ function setEditorValue(value) {
 
 function publishLive() {
   if (liveApplying || !liveSocket || liveSocket.readyState !== WebSocket.OPEN || !visibleProblems[cur]) return;
-  liveSocket.send(JSON.stringify({ type: 'change', code: editor.getValue(), problemId: visibleProblems[cur].id }));
+  liveSocket.send(JSON.stringify({ type: 'change', code: editor.getValue(), problemId: visibleProblems[cur].id, category: section }));
 }
 
 function updateLiveStatus(text, connected = false) {
@@ -237,12 +240,17 @@ function connectLive() {
   liveSocket = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/live' + (access ? '?accessCode=' + encodeURIComponent(access) : ''));
   liveSocket.onopen = () => {
     updateLiveStatus('Connecting…');
-    liveSocket.send(JSON.stringify({ type: 'join', session: liveSession, code: editor.getValue(), problemId: visibleProblems[cur] && visibleProblems[cur].id }));
+    liveSocket.send(JSON.stringify({ type: 'join', session: liveSession, code: editor.getValue(), problemId: visibleProblems[cur] && visibleProblems[cur].id, category: section }));
   };
   liveSocket.onmessage = (event) => {
     let message; try { message = JSON.parse(event.data); } catch (_) { return; }
     if (message.type === 'error') { updateLiveStatus(message.message); liveSocket.close(); return; }
     if (message.type === 'state') {
+      if (message.category && message.category !== section && problems.some((p) => p.category === message.category)) {
+        section = message.category;
+        visibleProblems = problems.filter((p) => p.category === section);
+        renderSections(); renderSidebar();
+      }
       if (message.problemId && visibleProblems.some((p) => p.id === message.problemId)) {
         const next = visibleProblems.findIndex((p) => p.id === message.problemId);
         if (next !== cur) { liveApplying = true; select(next, false); liveApplying = false; }
@@ -252,6 +260,12 @@ function connectLive() {
     }
     if (message.type === 'presence') updateLiveStatus('Live • ' + message.count + '/2', true);
     if (message.type === 'change') {
+      if (message.category && message.category !== section && problems.some((p) => p.category === message.category)) {
+        section = message.category;
+        visibleProblems = problems.filter((p) => p.category === section);
+        cur = 0;
+        renderSections(); renderSidebar();
+      }
       if (message.problemId && visibleProblems.some((p) => p.id === message.problemId)) {
         const next = visibleProblems.findIndex((p) => p.id === message.problemId);
         if (next !== cur) { liveApplying = true; select(next, false); liveApplying = false; }
@@ -291,11 +305,12 @@ function renderTabs() {
 
 function renderSections() {
   const s = $('sections'); s.textContent = '';
-  ['Sorting', 'Recursion', 'Pointers', 'Revision', 'Mock Quiz 🔒'].forEach((name) => {
+  ['Sorting', 'Recursion', 'Pointers', 'Pointers Theory', 'Revision', 'Mock Quiz 🔒'].forEach((name) => {
     const b = el('button', 'section' + (name === section ? ' active' : ''), name);
     b.onclick = () => {
       if (name === section) return;
       if (name === 'Mock Quiz 🔒') { openMockQuiz(); return; }
+      if (name === 'Pointers Theory') { openPointerTheory(); return; }
       document.body.classList.remove('quiz-open');
       const previousProblem = visibleProblems[cur];
       saveCode(previousProblem);
@@ -319,15 +334,28 @@ async function openMockQuiz() {
     mockQuiz = await r.json();
   }
   document.body.classList.add('quiz-open');
-  renderQuiz();
+  renderQuiz(mockQuiz, 'Mock Quiz');
 }
 
-function renderQuiz() {
+async function openPointerTheory() {
+  if (!mockQuiz) {
+    const key = sessionStorage.getItem('mock-quiz-key') || prompt('Enter the mock quiz key:');
+    if (key === null) return;
+    const r = await fetch('/api/mock-quiz', { headers: { 'x-mock-quiz-key': key } });
+    if (!r.ok) { alert('Incorrect mock quiz key.'); return; }
+    sessionStorage.setItem('mock-quiz-key', key);
+    mockQuiz = await r.json();
+  }
+  document.body.classList.add('quiz-open');
+  renderQuiz(mockQuiz.filter((q) => ['mq1', 'mq2', 'mq3', 'mq4', 'mq9', 'mq10'].includes(q.id)), 'Pointers Theory');
+}
+
+function renderQuiz(quiz = mockQuiz, heading = 'Mock Quiz') {
   const root = $('quizView'); root.textContent = '';
-  root.appendChild(el('h2', null, 'Mock Quiz'));
-  root.appendChild(el('div', 'quizIntro', '11 questions from the mock quiz PDF. Select answers for multiple-choice questions, then submit for an objective score.'));
+  root.appendChild(el('h2', null, heading));
+  root.appendChild(el('div', 'quizIntro', 'Select answers and write responses for subjective questions, then submit to see the answer and explanation.'));
   const form = document.createElement('form');
-  mockQuiz.forEach((q, qi) => {
+  quiz.forEach((q, qi) => {
     const card = el('article', 'quizCard');
     card.appendChild(el('h3', null, 'Q' + (qi + 1) + ' · ' + q.marks + ' marks'));
     card.appendChild(el('div', null, q.question));
@@ -337,18 +365,40 @@ function renderQuiz() {
       const input = document.createElement('input'); input.type = 'checkbox'; input.name = q.id; input.value = oi;
       label.appendChild(input); label.appendChild(document.createTextNode(String.fromCharCode(65 + oi) + '. ' + option)); card.appendChild(label);
     });
-    if (q.type === 'output') card.appendChild(el('div', 'note', 'Write the output on paper and check your reasoning.'));
-    if (q.type === 'coding') card.appendChild(el('div', 'note', 'Write a complete C solution separately.'));
+    if (q.type === 'output' || q.type === 'coding') {
+      card.appendChild(el('div', 'note', q.type === 'output' ? 'Write the expected output:' : 'Write your solution or approach:'));
+      const answer = document.createElement('textarea'); answer.className = 'quizAnswer'; answer.name = q.id; answer.placeholder = 'Your answer'; card.appendChild(answer);
+    }
     form.appendChild(card);
   });
   const submit = document.createElement('button'); submit.id = 'quizSubmit'; submit.type = 'submit'; submit.textContent = 'Submit objective answers';
   const result = el('span', null, ''); result.id = 'quizResult'; form.appendChild(submit); form.appendChild(result);
-  form.onsubmit = async (event) => { event.preventDefault(); const answers = {}; mockQuiz.forEach((q) => { answers[q.id] = [...form.querySelectorAll('input[name="' + q.id + '"]:checked')].map((x) => Number(x.value)); }); const r = await fetch('/api/mock-quiz/grade', { method: 'POST', headers: {'Content-Type':'application/json','x-mock-quiz-key':sessionStorage.getItem('mock-quiz-key')}, body: JSON.stringify({ answers }) }); const j = await r.json(); result.textContent = r.ok ? 'Score: ' + j.score + '/' + j.total : j.error; };
+  form.onsubmit = async (event) => {
+    event.preventDefault();
+    const answers = {};
+    quiz.forEach((q) => { answers[q.id] = q.options ? [...form.querySelectorAll('input[name="' + q.id + '"]:checked')].map((x) => Number(x.value)) : (form.querySelector('[name="' + q.id + '"]') || {}).value || ''; });
+    const r = await fetch('/api/mock-quiz/grade', { method: 'POST', headers: {'Content-Type':'application/json','x-mock-quiz-key':sessionStorage.getItem('mock-quiz-key')}, body: JSON.stringify({ answers, questionIds: quiz.map((q) => q.id) }) });
+    const j = await r.json();
+    if (!r.ok) { result.textContent = j.error; return; }
+    result.textContent = 'Objective score: ' + j.score + '/' + j.total;
+    j.review.forEach((item, index) => {
+      const card = form.querySelectorAll('.quizCard')[index];
+      const review = el('div', 'quizReview' + (item.correct ? ' correct' : ''));
+      review.appendChild(el('strong', null, item.correct ? 'Correct' : 'Answer'));
+      review.appendChild(el('div', null, typeof item.answer === 'string' ? item.answer : (item.answer || []).map((x) => String.fromCharCode(65 + x)).join(', ')));
+      review.appendChild(el('div', 'muted', 'Explanation: ' + item.explanation));
+      card.appendChild(review);
+    });
+  };
   root.appendChild(form);
 }
 
 function renderSidebar() {
   const root = $('topicGroups'); root.textContent = '';
+  const theory = el('button', 'topic');
+  theory.appendChild(el('span', null, 'Pointers Theory'));
+  theory.onclick = openPointerTheory;
+  root.appendChild(theory);
   const groups = [
     { label: 'Basic Logic Questions', topics: [['Logical', 'Basic Logic'], ['Array', 'Array'], ['2D Arrays', '2D Arrays'], ['Strings', 'Strings'], ['Functions', 'Functions']] },
     { label: 'Today', topics: [['Sorting', 'Sorting'], ['Recursion', 'Recursion'], ['Pointers', 'Pointers'], ['Revision', 'Revision'], ['Mock Quiz 🔒', 'Mock Quiz']] },
@@ -534,11 +584,11 @@ $('reset').onclick = () => {
   problems = await (await api('/api/problems')).json();
   visibleProblems = problems.filter((p) => p.category === section);
   cur = 0;
-  await initEditor();
-  if (liveSession) connectLive();
   renderSections();
   renderSidebar();
   select(cur);
+  await initEditor();
+  if (liveSession) connectLive();
 })();
 </script>
 </body>
