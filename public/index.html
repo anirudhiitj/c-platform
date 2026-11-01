@@ -41,6 +41,9 @@
   .quizAnswer { width: 100%; min-height: 90px; resize: vertical; margin-top: 10px; padding: 9px; border: 1px solid var(--border); border-radius: 5px; background: var(--bg); color: var(--text); font: inherit; }
   .quizReview { margin-top: 10px; padding: 10px; border-left: 3px solid var(--accent); background: var(--bg); }
   .quizReview.correct { border-left-color: var(--ok); }
+  .quizQuestionSubmit { background: var(--accent); color: #fff; border: 0; border-radius: 6px; padding: 7px 12px; font: inherit; cursor: pointer; }
+  .quizQuestionSubmit:disabled { opacity: .6; cursor: wait; }
+  .quizQuestionResult { margin-left: 10px; color: var(--muted); }
   #quizSubmit { background: var(--accent); color: #fff; border: 0; border-radius: 6px; padding: 8px 15px; font: inherit; cursor: pointer; }
   #quizResult { margin-left: 12px; color: var(--ok); }
   #left h2 { margin: 0 0 12px; font-size: 18px; }
@@ -364,29 +367,36 @@ function renderQuiz(quiz = mockQuiz, heading = 'Mock Quiz') {
       card.appendChild(el('div', 'note', q.type === 'output' ? 'Write the expected output:' : 'Write your solution or approach:'));
       const answer = document.createElement('textarea'); answer.className = 'quizAnswer'; answer.name = q.id; answer.placeholder = 'Your answer'; card.appendChild(answer);
     }
+    const submit = document.createElement('button');
+    submit.type = 'button'; submit.className = 'quizQuestionSubmit'; submit.textContent = 'Submit Q' + (qi + 1);
+    const result = el('span', 'quizQuestionResult', '');
+    card.appendChild(submit); card.appendChild(result);
+    submit.onclick = async () => {
+      submit.disabled = true;
+      result.textContent = ' Checking...';
+      const answers = { [q.id]: q.options
+        ? [...card.querySelectorAll('input[name="' + q.id + '"]:checked')].map((x) => Number(x.value))
+        : (card.querySelector('[name="' + q.id + '"]') || {}).value || '' };
+      const headers = {'Content-Type':'application/json'};
+      if (!q.id.startsWith('pt')) headers['x-mock-quiz-key'] = sessionStorage.getItem('mock-quiz-key');
+      try {
+        const response = await fetch('/api/mock-quiz/grade', { method: 'POST', headers, body: JSON.stringify({ answers, questionIds: [q.id] }) });
+        const data = await response.json();
+        if (!response.ok) { result.textContent = ' ' + (data.error || 'Unable to submit.'); return; }
+        const item = data.review[0];
+        result.textContent = ' Score: ' + data.score + '/' + data.total;
+        const oldReview = card.querySelector('.quizReview'); if (oldReview) oldReview.remove();
+        const review = el('div', 'quizReview' + (item.correct ? ' correct' : ''));
+        review.appendChild(el('strong', null, item.correct ? 'Correct' : 'Answer'));
+        review.appendChild(el('div', null, typeof item.answer === 'string' ? item.answer : (item.answer || []).map((x) => String.fromCharCode(65 + x)).join(', ')));
+        review.appendChild(el('div', 'muted', 'Explanation: ' + item.explanation));
+        card.appendChild(review);
+      } catch (error) {
+        result.textContent = ' ' + (error.message || 'Unable to submit.');
+      } finally { submit.disabled = false; }
+    };
     form.appendChild(card);
   });
-  const submit = document.createElement('button'); submit.id = 'quizSubmit'; submit.type = 'submit'; submit.textContent = 'Submit objective answers';
-  const result = el('span', null, ''); result.id = 'quizResult'; form.appendChild(submit); form.appendChild(result);
-  form.onsubmit = async (event) => {
-    event.preventDefault();
-    const answers = {};
-    quiz.forEach((q) => { answers[q.id] = q.options ? [...form.querySelectorAll('input[name="' + q.id + '"]:checked')].map((x) => Number(x.value)) : (form.querySelector('[name="' + q.id + '"]') || {}).value || ''; });
-    const gradeHeaders = {'Content-Type':'application/json'};
-    if (!quiz.every((q) => q.id.startsWith('pt'))) gradeHeaders['x-mock-quiz-key'] = sessionStorage.getItem('mock-quiz-key');
-    const r = await fetch('/api/mock-quiz/grade', { method: 'POST', headers: gradeHeaders, body: JSON.stringify({ answers, questionIds: quiz.map((q) => q.id) }) });
-    const j = await r.json();
-    if (!r.ok) { result.textContent = j.error; return; }
-    result.textContent = 'Objective score: ' + j.score + '/' + j.total;
-    j.review.forEach((item, index) => {
-      const card = form.querySelectorAll('.quizCard')[index];
-      const review = el('div', 'quizReview' + (item.correct ? ' correct' : ''));
-      review.appendChild(el('strong', null, item.correct ? 'Correct' : 'Answer'));
-      review.appendChild(el('div', null, typeof item.answer === 'string' ? item.answer : (item.answer || []).map((x) => String.fromCharCode(65 + x)).join(', ')));
-      review.appendChild(el('div', 'muted', 'Explanation: ' + item.explanation));
-      card.appendChild(review);
-    });
-  };
   root.appendChild(form);
 }
 
