@@ -44,6 +44,8 @@ const RECURSION_PROBLEMS = JSON.parse(fs.readFileSync(path.join(__dirname, 'recu
   .map((p) => ({ ...p, category: p.category || 'Recursion' }));
 const REVISION_PROBLEMS = JSON.parse(fs.readFileSync(path.join(__dirname, 'revision.json'), 'utf8'))
   .map((p) => ({ ...p, category: p.category || 'Revision' }));
+const MOCK_QUIZ = JSON.parse(fs.readFileSync(path.join(__dirname, 'mock-quiz.json'), 'utf8'));
+const MOCK_QUIZ_KEY = '18122022';
 const SORTING_PROBLEMS = JSON.parse(fs.readFileSync(path.join(__dirname, 'sorting.json'), 'utf8'))
   .map((p) => ({ ...p, category: p.category || 'Sorting' }))
   .sort((a, b) => ({ sort7: 1, sort2: 2, sort1: 3, sort3: 4, sort6: 5, sort4: 6, sort5: 7 }[a.id] || 99) - ({ sort7: 1, sort2: 2, sort1: 3, sort3: 4, sort6: 5, sort4: 6, sort5: 7 }[b.id] || 99));
@@ -222,6 +224,23 @@ app.get('/api/problems', (req, res) => {
     tests: p.tests.filter((t) => t.visible).map((t) => ({ input: t.input, expected: t.expected })),
     hiddenCount: p.tests.filter((t) => !t.visible).length,
   })));
+});
+
+app.get('/api/mock-quiz', (req, res) => {
+  if (req.get('x-mock-quiz-key') !== MOCK_QUIZ_KEY) return res.status(401).json({ error: 'Mock quiz key required.' });
+  res.json(MOCK_QUIZ.map(({ answer, answerText, ...question }) => question));
+});
+
+app.post('/api/mock-quiz/grade', (req, res) => {
+  if (req.get('x-mock-quiz-key') !== MOCK_QUIZ_KEY) return res.status(401).json({ error: 'Mock quiz key required.' });
+  const answers = req.body && req.body.answers;
+  if (!answers || typeof answers !== 'object') return res.status(400).json({ error: 'Answers are required.' });
+  let score = 0, total = 0;
+  MOCK_QUIZ.forEach((q) => {
+    total += q.marks;
+    if (q.type === 'multi' && JSON.stringify([...(answers[q.id] || [])].map(Number).sort()) === JSON.stringify(q.answer)) score += q.marks;
+  });
+  res.json({ score, total, note: 'Output and coding questions are for self-checking.' });
 });
 
 app.post('/api/run', cooldown, async (req, res) => {
