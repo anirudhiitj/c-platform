@@ -299,6 +299,13 @@ window.addEventListener('beforeunload', () => saveCode());
 /* ---------- problem rendering ---------- */
 function renderTabs() {
   const t = $('tabs'); t.textContent = '';
+  if (section !== 'Mock Lab Exam') return;
+  visibleProblems.forEach((p, i) => {
+    const b = el('button', 'tab' + (i === cur ? ' active' : ''), 'Q' + (i + 1));
+    b.title = p.title;
+    b.onclick = () => select(i);
+    t.appendChild(b);
+  });
 }
 
 function renderSections() {
@@ -420,6 +427,10 @@ function renderSidebar() {
   theory.appendChild(el('span', null, 'Pointers Theory'));
   theory.onclick = openPointerTheory;
   root.appendChild(theory);
+  const mockTheory = el('button', 'topic');
+  mockTheory.appendChild(el('span', null, 'Mock Theory Quiz'));
+  mockTheory.onclick = openMockQuiz;
+  root.appendChild(mockTheory);
   const groups = [
     { label: 'Basic Logic Questions', topics: [['Logical', 'Basic Logic'], ['Array', 'Array'], ['2D Arrays', '2D Arrays'], ['Strings', 'Strings'], ['Functions', 'Functions']] },
     { label: 'Today', topics: [['Sorting', 'Sorting'], ['Recursion', 'Recursion'], ['Pointers', 'Pointers'], ['Revision', 'Revision'], ['Mock Quiz 🔒', 'Mock Quiz']] },
@@ -429,6 +440,7 @@ function renderSidebar() {
     const wrap = el('div', 'topicGroup');
     wrap.appendChild(el('h3', null, group.label));
     group.topics.forEach(([name, label]) => {
+      if (name.startsWith('Mock Quiz')) return;
       const topic = el('button', 'topic' + (name === section ? ' active' : ''));
       const displayLabel = name.startsWith('Mock Quiz') ? 'Mock Theory Quiz' : label;
       topic.appendChild(el('span', null, displayLabel));
