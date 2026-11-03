@@ -222,6 +222,7 @@ function saveCode(problem = visibleProblems[cur]) {
 }
 
 function setEditorValue(value) {
+  if (!editor) return;
   liveApplying = true;
   editor.setValue(value);
   liveApplying = false;
@@ -298,16 +299,24 @@ window.addEventListener('beforeunload', () => saveCode());
 /* ---------- problem rendering ---------- */
 function renderTabs() {
   const t = $('tabs'); t.textContent = '';
-  visibleProblems.forEach((p, i) => {
-    const b = el('button', 'tab' + (i === cur ? ' active' : ''), 'Q' + (i + 1));
-    b.title = p.title;
-    b.onclick = () => select(i);
-    t.appendChild(b);
-  });
 }
 
 function renderSections() {
   const s = $('sections'); s.textContent = '';
+  const b = el('button', 'section', 'Mock Lab Exam');
+  b.onclick = () => {
+    document.body.classList.remove('quiz-open');
+    saveCode(visibleProblems[cur]);
+    section = 'Mock Lab Exam';
+    visibleProblems = problems.filter((p) => p.category === section);
+    cur = 0;
+    renderSections();
+    renderSidebar();
+    select(0, false);
+  };
+  s.appendChild(b);
+  return;
+  /* legacy header sections retained below for reference */
   ['Sorting', 'Recursion', 'Pointers', 'Pointers Theory', 'Revision', 'Mock Quiz 🔒'].forEach((name) => {
     const b = el('button', 'section' + (name === section ? ' active' : ''), name);
     b.onclick = () => {
@@ -329,15 +338,12 @@ function renderSections() {
 
 async function openMockQuiz() {
   if (!mockQuiz) {
-    const key = sessionStorage.getItem('mock-quiz-key') || prompt('Enter the mock quiz key:');
-    if (key === null) return;
-    const r = await fetch('/api/mock-quiz', { headers: { 'x-mock-quiz-key': key } });
-    if (!r.ok) { alert('Incorrect mock quiz key.'); return; }
-    sessionStorage.setItem('mock-quiz-key', key);
+    const r = await fetch('/api/mock-quiz');
+    if (!r.ok) { alert('Unable to load the mock quiz.'); return; }
     mockQuiz = await r.json();
   }
   document.body.classList.add('quiz-open');
-  renderQuiz(mockQuiz, 'Mock Quiz');
+  renderQuiz(mockQuiz, 'Mock Theory Quiz');
 }
 
 async function openPointerTheory() {
@@ -352,6 +358,15 @@ function renderQuiz(quiz = mockQuiz, heading = 'Mock Quiz') {
   const root = $('quizView'); root.textContent = '';
   root.appendChild(el('h2', null, heading));
   root.appendChild(el('div', 'quizIntro', 'Select answers and write responses for subjective questions, then submit to see the answer and explanation.'));
+  if (heading === 'Mock Theory Quiz') {
+    const link = document.createElement('a');
+    link.className = 'externalLink';
+    link.href = 'https://docs.google.com/document/d/1MCVcvRL3ZJGXKPWoT13YKhab8P0JgLTqwAEo29j9dYA/edit?tab=t.zahltcvr4zmb';
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.textContent = 'Open the mock theory quiz document';
+    root.appendChild(link);
+  }
   const form = document.createElement('form');
   quiz.forEach((q, qi) => {
     const card = el('article', 'quizCard');
@@ -378,7 +393,6 @@ function renderQuiz(quiz = mockQuiz, heading = 'Mock Quiz') {
         ? [...card.querySelectorAll('input[name="' + q.id + '"]:checked')].map((x) => Number(x.value))
         : (card.querySelector('[name="' + q.id + '"]') || {}).value || '' };
       const headers = {'Content-Type':'application/json'};
-      if (!q.id.startsWith('pt')) headers['x-mock-quiz-key'] = sessionStorage.getItem('mock-quiz-key');
       try {
         const response = await fetch('/api/mock-quiz/grade', { method: 'POST', headers, body: JSON.stringify({ answers, questionIds: [q.id] }) });
         const data = await response.json();
@@ -410,13 +424,15 @@ function renderSidebar() {
     { label: 'Basic Logic Questions', topics: [['Logical', 'Basic Logic'], ['Array', 'Array'], ['2D Arrays', '2D Arrays'], ['Strings', 'Strings'], ['Functions', 'Functions']] },
     { label: 'Today', topics: [['Sorting', 'Sorting'], ['Recursion', 'Recursion'], ['Pointers', 'Pointers'], ['Revision', 'Revision'], ['Mock Quiz 🔒', 'Mock Quiz']] },
   ];
+  groups.push({ label: 'Mock Lab Exam', topics: [['Mock Lab Exam', 'Mock Lab Exam']] });
   groups.forEach((group) => {
     const wrap = el('div', 'topicGroup');
     wrap.appendChild(el('h3', null, group.label));
     group.topics.forEach(([name, label]) => {
       const topic = el('button', 'topic' + (name === section ? ' active' : ''));
-      topic.appendChild(el('span', null, label));
-      topic.appendChild(el('small', null, problems.filter((p) => p.category === name).length));
+      const displayLabel = name.startsWith('Mock Quiz') ? 'Mock Theory Quiz' : label;
+      topic.appendChild(el('span', null, displayLabel));
+      if (!name.startsWith('Mock Quiz')) topic.appendChild(el('small', null, problems.filter((p) => p.category === name).length));
       topic.onclick = () => {
         if (name === 'Mock Quiz 🔒') { openMockQuiz(); return; }
         document.body.classList.remove('quiz-open');
@@ -430,6 +446,7 @@ function renderSidebar() {
         select(0, false);
       };
       wrap.appendChild(topic);
+      if (!name.startsWith('Mock Quiz')) {
       const list = el('div', 'questionList');
       problems.filter((p) => p.category === name).forEach((p) => {
         const q = el('button', 'question' + (name === section && visibleProblems[cur] && p.id === visibleProblems[cur].id ? ' current' : ''), p.title);
@@ -443,6 +460,7 @@ function renderSidebar() {
         list.appendChild(q);
       });
       wrap.appendChild(list);
+      }
     });
     root.appendChild(wrap);
   });
@@ -595,6 +613,7 @@ $('reset').onclick = () => {
   renderSidebar();
   select(cur);
   await initEditor();
+  select(cur, false);
   if (liveSession) connectLive();
 })();
 </script>

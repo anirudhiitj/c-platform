@@ -1,0 +1,31 @@
+[
+  {
+    "id": "lab1",
+    "category": "Mock Lab Exam",
+    "title": "Kwisatz Haderach: Maximum Herbs in a Circle",
+    "statement": "Given n gardens arranged in a circle, each containing nums[i] herbs, collect the maximum total without collecting from two neighboring gardens. The first and last gardens are also neighbors.\n\nInput: n followed by n non-negative integers.\nOutput: the maximum number of herbs that can be collected.\n\nConstraints: 1 <= n <= 20 and 0 <= nums[i] <= 100.",
+    "tests": [
+      {"visible": true, "input": "3\n2 3 2\n", "expected": "3"},
+      {"visible": true, "input": "4\n1 2 3 1\n", "expected": "4"},
+      {"visible": false, "input": "3\n0 0 0\n", "expected": "0"},
+      {"visible": false, "input": "6\n5 5 10 12 10 5\n", "expected": "25"},
+      {"visible": false, "input": "1\n10\n", "expected": "10"},
+      {"visible": false, "input": "5\n2 7 9 3 1\n", "expected": "11"},
+      {"visible": false, "input": "7\n8 1 9 6 1 7 2\n", "expected": "24"}
+    ]
+  },
+  {
+    "id": "lab2",
+    "category": "Mock Lab Exam",
+    "title": "Kwisatz Haderach: Irregular Step Timing",
+    "statement": "Count the distinct sequences of step gaps that total exactly N seconds. Each gap is 1, 2, or 3 seconds, and two consecutive gaps cannot be equal.\n\nInput: a single integer N (0 <= N <= 20).\nOutput: the number of valid timing patterns.\n\nFor N = 0, the empty pattern counts as one valid pattern.",
+    "tests": [
+      {"visible": true, "input": "0\n", "expected": "1"},
+      {"visible": true, "input": "5\n", "expected": "4"},
+      {"visible": false, "input": "1\n", "expected": "1"},
+      {"visible": false, "input": "2\n", "expected": "1"},
+      {"visible": false, "input": "7\n", "expected": "9"},
+      {"visible": false, "input": "10\n", "expected": "27"}
+    ]
+  }
+]
