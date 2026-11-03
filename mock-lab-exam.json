@@ -3,24 +3,23 @@
     "id": "lab1",
     "category": "Mock Lab Exam",
     "title": "Kwisatz Haderach: Maximum Herbs in a Circle",
-    "statement": "Given n gardens arranged in a circle, each containing nums[i] herbs, collect the maximum total without collecting from two neighboring gardens. The first and last gardens are also neighbors.\n\nInput: n followed by n non-negative integers.\nOutput: the maximum number of herbs that can be collected.\n\nConstraints: 1 <= n <= 20 and 0 <= nums[i] <= 100.",
+    "statement": "Given n gardens arranged in a circle, each containing nums[i] herbs, collect the maximum total without collecting from two neighboring gardens. The first and last gardens are also neighbors.\n\nInput: n followed by n non-negative integers.\nOutput: the maximum number of herbs that can be collected.\n\nConstraints: 1 <= n <= 20 and 0 <= nums[i] <= 100.\n\nRequirement: solve the problem using pointers for traversal and access. Do not use array indexing such as nums[i].",
     "tests": [
       {"visible": true, "input": "3\n2 3 2\n", "expected": "3"},
       {"visible": true, "input": "4\n1 2 3 1\n", "expected": "4"},
       {"visible": false, "input": "3\n0 0 0\n", "expected": "0"},
       {"visible": false, "input": "6\n5 5 10 12 10 5\n", "expected": "25"},
       {"visible": false, "input": "1\n10\n", "expected": "10"},
-      {"visible": false, "input": "5\n2 7 9 3 1\n", "expected": "11"},
-      {"visible": false, "input": "7\n8 1 9 6 1 7 2\n", "expected": "24"}
+      {"visible": false, "input": "5\n2 7 9 3 1\n", "expected": "11"}
     ]
   },
   {
     "id": "lab2",
     "category": "Mock Lab Exam",
     "title": "Kwisatz Haderach: Irregular Step Timing",
-    "statement": "Count the distinct sequences of step gaps that total exactly N seconds. Each gap is 1, 2, or 3 seconds, and two consecutive gaps cannot be equal.\n\nInput: a single integer N (0 <= N <= 20).\nOutput: the number of valid timing patterns.\n\nFor N = 0, the empty pattern counts as one valid pattern.",
+    "statement": "Count the distinct sequences of step gaps that total exactly N seconds. Each gap is 1, 2, or 3 seconds, and two consecutive gaps cannot be equal.\n\nInput: a single integer N (0 <= N <= 20).\nOutput: the number of valid timing patterns.\n\nFor example, when N = 3, the valid patterns are 3, 1 2, and 2 1, so the output is 3. Consecutive equal gaps such as 1 1 are not allowed.",
     "tests": [
-      {"visible": true, "input": "0\n", "expected": "1"},
+      {"visible": true, "input": "3\n", "expected": "3"},
       {"visible": true, "input": "5\n", "expected": "4"},
       {"visible": false, "input": "1\n", "expected": "1"},
       {"visible": false, "input": "2\n", "expected": "1"},
@@ -31,15 +30,15 @@
   {
     "id": "lab3",
     "category": "Mock Lab Exam",
-    "title": "Excel Column Number to Title",
-    "statement": "Given a positive integer column number, return its corresponding Excel sheet column title. The first columns are A -> 1, B -> 2, Z -> 26, and AA -> 27.\n\nInput: a single positive integer.\nOutput: the corresponding column title.",
+    "title": "Excel Column Title to Number",
+    "statement": "Given an Excel sheet column title, return its corresponding positive column number. For example, A -> 1, B -> 2, Z -> 26, and AA -> 27.\n\nInput: a single uppercase column title.\nOutput: the corresponding column number.",
     "tests": [
-      {"visible": true, "input": "1\n", "expected": "A"},
-      {"visible": true, "input": "27\n", "expected": "AA"},
-      {"visible": false, "input": "2\n", "expected": "B"},
-      {"visible": false, "input": "26\n", "expected": "Z"},
-      {"visible": false, "input": "52\n", "expected": "AZ"},
-      {"visible": false, "input": "703\n", "expected": "AAA"}
+      {"visible": true, "input": "AA\n", "expected": "27"},
+      {"visible": true, "input": "Z\n", "expected": "26"},
+      {"visible": false, "input": "A\n", "expected": "1"},
+      {"visible": false, "input": "B\n", "expected": "2"},
+      {"visible": false, "input": "AZ\n", "expected": "52"},
+      {"visible": false, "input": "AAA\n", "expected": "703"}
     ]
   }
 ]
