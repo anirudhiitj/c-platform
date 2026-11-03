@@ -30,15 +30,15 @@
   {
     "id": "lab3",
     "category": "Mock Lab Exam",
-    "title": "Excel Column Title to Number",
-    "statement": "Given an Excel sheet column title, return its corresponding positive column number. For example, A -> 1, B -> 2, Z -> 26, and AA -> 27.\n\nInput: a single uppercase column title.\nOutput: the corresponding column number.",
+    "title": "Excel Column Number to Title",
+    "statement": "Given a positive column number, return its corresponding Excel sheet column title. For example, 1 -> A, 2 -> B, 26 -> Z, and 27 -> AA.\n\nInput: a single positive integer column number.\nOutput: the corresponding uppercase column title.",
     "tests": [
-      {"visible": true, "input": "AA\n", "expected": "27"},
-      {"visible": true, "input": "Z\n", "expected": "26"},
-      {"visible": false, "input": "A\n", "expected": "1"},
-      {"visible": false, "input": "B\n", "expected": "2"},
-      {"visible": false, "input": "AZ\n", "expected": "52"},
-      {"visible": false, "input": "AAA\n", "expected": "703"}
+      {"visible": true, "input": "27\n", "expected": "AA"},
+      {"visible": true, "input": "26\n", "expected": "Z"},
+      {"visible": false, "input": "1\n", "expected": "A"},
+      {"visible": false, "input": "2\n", "expected": "B"},
+      {"visible": false, "input": "52\n", "expected": "AZ"},
+      {"visible": false, "input": "703\n", "expected": "AAA"}
     ]
   }
 ]
