@@ -44,14 +44,14 @@
     ]
   },
   {
-    "id": "rev5", "category": "Revision", "title": "Q5. Sum to the Right and Below",
-    "statement": "For every cell of an N x M matrix, print the sum of all cells to its right in the same row and below it in the same column, excluding the cell itself.",
+    "id": "rev5", "category": "Revision", "title": "Q5. Sum of the Submatrix",
+    "statement": "For every cell of an N x M matrix, consider the submatrix beginning at that cell and extending to the bottom-right corner. Print the sum of every element in that submatrix except the current cell itself.",
     "tests": [
-      {"visible": true, "input": "3 4\n1 2 3 4\n5 6 7 8\n9 10 11 12\n", "expected": "23 23 22 20\n30 25 19 12\n33 23 12 0"},
+      {"visible": true, "input": "3 4\n1 2 3 4\n5 6 7 8\n9 10 11 12\n", "expected": "77 61 42 20\n63 48 31 12\n33 23 12 0"},
       {"visible": true, "input": "1 3\n4 5 6\n", "expected": "11 6 0"},
       {"visible": false, "input": "1 1\n9\n", "expected": "0"},
-      {"visible": false, "input": "2 2\n1 2\n3 4\n", "expected": "5 4\n4 0"},
-      {"visible": false, "input": "2 3\n-1 0 2\n3 -2 4\n", "expected": "5 0 4\n2 4 0"}
+      {"visible": false, "input": "2 2\n1 2\n3 4\n", "expected": "9 6\n4 0"},
+      {"visible": false, "input": "2 3\n-1 0 2\n3 -2 4\n", "expected": "7 4 4\n2 4 0"}
     ]
   },
   {

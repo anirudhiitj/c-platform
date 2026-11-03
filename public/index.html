@@ -160,6 +160,8 @@
 <script>
 const DEFAULT_TEMPLATE = '#include <stdio.h>\n\nint main(void) {\n    \n    return 0;\n}\n';
 let problems = [], visibleProblems = [], cur = 0, editor = null, section = 'Sorting', mockQuiz = null;
+const MOCK_LAB_EXAM_KEY = '10072016';
+let mockLabUnlocked = sessionStorage.getItem('mock-lab-exam-unlocked') === 'yes';
 let liveSocket = null, liveSession = new URLSearchParams(location.search).get('live'), liveApplying = false;
 
 const $ = (id) => document.getElementById(id);
@@ -311,16 +313,7 @@ function renderTabs() {
 function renderSections() {
   const s = $('sections'); s.textContent = '';
   const b = el('button', 'section', 'Mock Lab Exam');
-  b.onclick = () => {
-    document.body.classList.remove('quiz-open');
-    saveCode(visibleProblems[cur]);
-    section = 'Mock Lab Exam';
-    visibleProblems = problems.filter((p) => p.category === section);
-    cur = 0;
-    renderSections();
-    renderSidebar();
-    select(0, false);
-  };
+  b.onclick = () => openMockLabExam();
   s.appendChild(b);
   return;
   /* legacy header sections retained below for reference */
@@ -341,6 +334,24 @@ function renderSections() {
     };
     s.appendChild(b);
   });
+}
+
+function openMockLabExam(problemIndex = 0) {
+  if (!mockLabUnlocked) {
+    const key = prompt('Enter the Mock Lab Exam key:');
+    if (key === null) return;
+    if (key !== MOCK_LAB_EXAM_KEY) { alert('Incorrect Mock Lab Exam key.'); return; }
+    mockLabUnlocked = true;
+    sessionStorage.setItem('mock-lab-exam-unlocked', 'yes');
+  }
+  document.body.classList.remove('quiz-open');
+  saveCode(visibleProblems[cur]);
+  section = 'Mock Lab Exam';
+  visibleProblems = problems.filter((p) => p.category === section);
+  cur = Math.max(0, Math.min(problemIndex, visibleProblems.length - 1));
+  renderSections();
+  renderSidebar();
+  select(cur, false);
 }
 
 async function openMockQuiz() {
@@ -446,6 +457,7 @@ function renderSidebar() {
       topic.appendChild(el('span', null, displayLabel));
       if (!name.startsWith('Mock Quiz')) topic.appendChild(el('small', null, problems.filter((p) => p.category === name).length));
       topic.onclick = () => {
+        if (name === 'Mock Lab Exam') { openMockLabExam(); return; }
         if (name === 'Mock Quiz 🔒') { openMockQuiz(); return; }
         document.body.classList.remove('quiz-open');
         if (name === section) { document.body.classList.remove('sidebar-open'); return; }
@@ -463,6 +475,10 @@ function renderSidebar() {
       problems.filter((p) => p.category === name).forEach((p) => {
         const q = el('button', 'question' + (name === section && visibleProblems[cur] && p.id === visibleProblems[cur].id ? ' current' : ''), p.title);
         q.onclick = () => {
+          if (name === 'Mock Lab Exam') {
+            openMockLabExam(problems.filter((item) => item.category === name).findIndex((item) => item.id === p.id));
+            return;
+          }
           section = name;
           visibleProblems = problems.filter((item) => item.category === section);
           select(visibleProblems.findIndex((item) => item.id === p.id));
