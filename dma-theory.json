@@ -1,0 +1,242 @@
+[
+  {
+    "id": "dma1",
+    "title": "Independent allocations",
+    "question": "Predict the output.",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n\nint main(void) {\n    int *p = malloc(3 * sizeof(int));\n    int *q = malloc(3 * sizeof(int));\n\n    p[0] = 10;\n    q[0] = 20;\n    *p = *q + 5;\n\n    printf(\"%d %d\", p[0], q[0]);\n    free(p);\n    free(q);\n}",
+    "answerText": "25 20",
+    "explanation": "p and q point to separate allocations. Assigning through p changes only p[0], using q[0] + 5, so the values printed are 25 and 20."
+  },
+  {
+    "id": "dma2",
+    "title": "Pointer reassignment",
+    "question": "Predict the output.",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n\nint main(void) {\n    int *p = malloc(3 * sizeof(int));\n    p[0] = 10;\n    p[1] = 20;\n    p[2] = 30;\n\n    int *q = p;\n    q = q + 1;\n    *q = 99;\n\n    printf(\"%d %d %d\", p[0], p[1], p[2]);\n    free(p);\n}",
+    "answerText": "10 99 30",
+    "explanation": "q initially aliases p, then advances to the second element. Writing 99 through q changes p[1]."
+  },
+  {
+    "id": "dma3",
+    "title": "Allocation inside a function",
+    "question": "Predict the output. Assume both allocations succeed.",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n\nvoid fun(int *p) {\n    p = malloc(2 * sizeof(int));\n    p[0] = 50;\n    p[1] = 60;\n}\n\nint main(void) {\n    int *p = malloc(2 * sizeof(int));\n    p[0] = 10;\n    p[1] = 20;\n\n    fun(p);\n    printf(\"%d %d\", p[0], p[1]);\n    free(p);\n}",
+    "answerText": "10 20",
+    "explanation": "The function receives a copy of the pointer. Reassigning that local copy does not update main's p; the new allocation is also leaked."
+  },
+  {
+    "id": "dma4",
+    "title": "Allocation through a double pointer",
+    "question": "Predict the output. Assume the allocation succeeds.",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n\nvoid fun(int **p) {\n    *p = malloc(3 * sizeof(int));\n    (*p)[0] = 5;\n    (*p)[1] = 10;\n    (*p)[2] = 15;\n}\n\nint main(void) {\n    int *p = NULL;\n    fun(&p);\n    printf(\"%d %d\", p[0], p[2]);\n    free(p);\n}",
+    "answerText": "5 15",
+    "explanation": "Passing &p lets the function assign the newly allocated address to main's pointer. The first and third elements are 5 and 15."
+  },
+  {
+    "id": "dma5",
+    "title": "calloc and pointer offsets",
+    "question": "Predict the output.",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n\nint main(void) {\n    int *p = calloc(5, sizeof(int));\n    p[1] = 10;\n    p[3] = 30;\n\n    int *q = p + 1;\n    printf(\"%d %d %d\", q[0], q[1], q[3]);\n    free(p);\n}",
+    "answerText": "10 0 0",
+    "explanation": "calloc zero-initializes all five integers. q points at p[1], so q[0] is 10, q[1] is p[2] (0), and q[3] is p[4] (0)."
+  },
+  {
+    "id": "dma6",
+    "title": "Shallow copy",
+    "question": "Predict the output.",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n\nint main(void) {\n    int *p = malloc(3 * sizeof(int));\n    p[0] = 1;\n    p[1] = 2;\n    p[2] = 3;\n\n    int *q = p;\n    q[0] = 100;\n    p[2] = 300;\n\n    printf(\"%d %d %d\", q[0], q[1], q[2]);\n    free(p);\n}",
+    "answerText": "100 2 300",
+    "explanation": "q = p copies the address, not the allocated values. Both pointers refer to the same three integers, so updates through either name are visible."
+  },
+  {
+    "id": "dma7",
+    "title": "Deep copy versus shallow copy",
+    "question": "Predict the output.",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n\nint main(void) {\n    int *p = malloc(3 * sizeof(int));\n    for (int i = 0; i < 3; i++) p[i] = i + 1;\n\n    int *q = malloc(3 * sizeof(int));\n    for (int i = 0; i < 3; i++) q[i] = p[i];\n    q[1] = 50;\n\n    printf(\"%d %d\", p[1], q[1]);\n    free(p);\n    free(q);\n}",
+    "answerText": "2 50",
+    "explanation": "q has its own allocation and receives copies of p's values. Changing q[1] therefore leaves p[1] equal to 2."
+  },
+  {
+    "id": "dma8",
+    "title": "Pointer passed by value",
+    "question": "Predict the output.",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n\nvoid fun(int *p) {\n    p++;\n    *p = 100;\n}\n\nint main(void) {\n    int *p = calloc(4, sizeof(int));\n    fun(p);\n    printf(\"%d %d %d\", p[0], p[1], p[2]);\n    free(p);\n}",
+    "answerText": "0 100 0",
+    "explanation": "The local pointer advances to the second element and writes 100 there. Pointer arithmetic inside the function does not move main's p."
+  },
+  {
+    "id": "dma9",
+    "title": "realloc with a temporary pointer",
+    "question": "Predict the output, assuming realloc succeeds.",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n\nint main(void) {\n    int *p = malloc(3 * sizeof(int));\n    p[0] = 10;\n    p[1] = 20;\n    p[2] = 30;\n\n    int *q = realloc(p, 5 * sizeof(int));\n    if (q == NULL) {\n        free(p);\n        return 0;\n    }\n    p = q;\n    p[3] = 40;\n    p[4] = 50;\n\n    printf(\"%d %d %d\", p[0], p[2], p[4]);\n    free(p);\n}",
+    "answerText": "10 30 50",
+    "explanation": "A successful realloc preserves the original three values and grows the block. The code initializes the new fifth element to 50 before printing it."
+  },
+  {
+    "id": "dma10",
+    "title": "realloc does not zero new memory",
+    "question": "What can be determined about the output? Assume realloc succeeds.",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n\nint main(void) {\n    int *p = calloc(3, sizeof(int));\n    p[0] = 5;\n    p[1] = 10;\n    p[2] = 15;\n\n    int *q = realloc(p, 6 * sizeof(int));\n    if (q == NULL) {\n        free(p);\n        return 0;\n    }\n    p = q;\n    printf(\"%d %d %d\", p[0], p[2], p[4]);\n    free(p);\n}",
+    "answerText": "5 15 ?",
+    "explanation": "The first two printed values are preserved. realloc does not zero-initialize the added region, so p[4] is indeterminate and must not be predicted as zero; reading an indeterminate int is not portable."
+  },
+  {
+    "id": "dma11",
+    "title": "Pointer offset after realloc",
+    "question": "Predict the output, assuming realloc succeeds.",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n\nint main(void) {\n    int *p = malloc(5 * sizeof(int));\n    for (int i = 0; i < 5; i++) p[i] = i + 10;\n\n    int offset = 3;\n    int *temp = realloc(p, 10 * sizeof(int));\n    if (temp == NULL) {\n        free(p);\n        return 0;\n    }\n    p = temp;\n    int *q = p + offset;\n\n    printf(\"%d %d\", *q, *(q - 2));\n    free(p);\n}",
+    "answerText": "13 11",
+    "explanation": "The resized allocation preserves its original elements. q points to p[3] (13), and q - 2 points to p[1] (11)."
+  },
+  {
+    "id": "dma12",
+    "title": "Reallocation through a double pointer",
+    "question": "Predict the output, assuming realloc succeeds.",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n\nvoid fun(int **p) {\n    int *temp = realloc(*p, 5 * sizeof(int));\n    if (temp == NULL) return;\n    *p = temp;\n    (*p)[3] = 40;\n    (*p)[4] = 50;\n}\n\nint main(void) {\n    int *p = malloc(3 * sizeof(int));\n    p[0] = 10;\n    p[1] = 20;\n    p[2] = 30;\n    fun(&p);\n    printf(\"%d %d\", p[3], p[4]);\n    free(p);\n}",
+    "answerText": "40 50",
+    "explanation": "The function updates the caller's pointer through int **p, then writes 40 and 50 into the two added elements."
+  },
+  {
+    "id": "dma13",
+    "title": "Multiple pointers to one allocation",
+    "question": "Predict the output.",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n\nint main(void) {\n    int *p = malloc(4 * sizeof(int));\n    for (int i = 0; i < 4; i++) p[i] = i + 1;\n\n    int *a = p + 1;\n    int *b = p + 2;\n    *a += *b;\n    *b += *p;\n\n    printf(\"%d %d %d\", p[0], *a, *b);\n    free(p);\n}",
+    "answerText": "1 5 4",
+    "explanation": "a points to p[1] and b to p[2]. First p[1] becomes 2 + 3 = 5; then p[2] becomes 3 + p[0] = 4."
+  },
+  {
+    "id": "dma14",
+    "title": "Swapping allocation ownership",
+    "question": "Predict the output.",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n\nint main(void) {\n    int *p = malloc(sizeof(int));\n    int *q = malloc(sizeof(int));\n    *p = 10;\n    *q = 20;\n\n    int *temp = p;\n    p = q;\n    q = temp;\n    *p += 5;\n    *q += 10;\n\n    printf(\"%d %d\", *p, *q);\n    free(p);\n    free(q);\n}",
+    "answerText": "25 20",
+    "explanation": "After swapping the pointers, p refers to the allocation containing 20 and q to the one containing 10. The updates produce 25 and 20."
+  },
+  {
+    "id": "dma15",
+    "title": "Freeing and reallocating",
+    "question": "Predict the output, assuming both allocations succeed.",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n\nint main(void) {\n    int *p = malloc(3 * sizeof(int));\n    p[0] = 10;\n    p[1] = 20;\n    p[2] = 30;\n    free(p);\n\n    p = malloc(2 * sizeof(int));\n    p[0] = 100;\n    p[1] = 200;\n    printf(\"%d %d\", p[0], p[1]);\n    free(p);\n}",
+    "answerText": "100 200",
+    "explanation": "The old allocation is freed before the new one is made. The program explicitly stores 100 and 200 in the new block, which has no inherited values."
+  },
+  {
+    "id": "dma16",
+    "title": "Pointer arithmetic with a resized block",
+    "question": "Predict the output, assuming realloc succeeds.",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n\nint main(void) {\n    int *p = malloc(4 * sizeof(int));\n    for (int i = 0; i < 4; i++) p[i] = (i + 1) * 10;\n\n    int offset = 2;\n    int *temp = realloc(p, 8 * sizeof(int));\n    if (temp == NULL) {\n        free(p);\n        return 0;\n    }\n    p = temp;\n    p[4] = 50;\n    p[5] = 60;\n\n    printf(\"%d %d\", p[offset], p[5]);\n    free(p);\n}",
+    "answerText": "30 60",
+    "explanation": "The original third element remains 30 after resizing. The program stores 60 in p[5], so those are the printed values."
+  },
+  {
+    "id": "dma17",
+    "title": "Reallocation in nested function calls",
+    "question": "Predict the output, assuming allocations succeed.",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n\nvoid grow(int **p, int n) {\n    int *temp = realloc(*p, n * sizeof(int));\n    if (temp == NULL) return;\n    *p = temp;\n}\n\nvoid fun(int **p) {\n    grow(p, 6);\n    (*p)[4] = 40;\n    (*p)[5] = 50;\n}\n\nint main(void) {\n    int *p = malloc(3 * sizeof(int));\n    p[0] = 10;\n    p[1] = 20;\n    p[2] = 30;\n    fun(&p);\n    printf(\"%d %d %d\", p[0], p[4], p[5]);\n    free(p);\n}",
+    "answerText": "10 40 50",
+    "explanation": "grow reallocates the caller's block via the double pointer and stores the resulting address back in p. The original first value remains 10 and the new elements are set to 40 and 50."
+  },
+  {
+    "id": "dma18",
+    "title": "Copying a pointer versus copying memory",
+    "question": "Predict the output, assuming allocations succeed.",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n\nint main(void) {\n    int *p = malloc(3 * sizeof(int));\n    p[0] = 10;\n    p[1] = 20;\n    p[2] = 30;\n\n    int *q = p;\n    int *r = malloc(3 * sizeof(int));\n    for (int i = 0; i < 3; i++) r[i] = q[i];\n    q = r;\n    q[0] = 100;\n\n    printf(\"%d %d\", p[0], q[0]);\n    free(p);\n    free(q);\n}",
+    "answerText": "10 100",
+    "explanation": "q initially aliases p, but is later redirected to r, a separate allocation containing copied values. Updating q[0] therefore does not change p[0]."
+  },
+  {
+    "id": "dma19",
+    "title": "realloc while shrinking and expanding",
+    "question": "Predict the output, assuming realloc succeeds both times.",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n\nint main(void) {\n    int *p = malloc(6 * sizeof(int));\n    for (int i = 0; i < 6; i++) p[i] = i + 1;\n\n    int *temp = realloc(p, 3 * sizeof(int));\n    if (temp == NULL) {\n        free(p);\n        return 0;\n    }\n    p = temp;\n    temp = realloc(p, 6 * sizeof(int));\n    if (temp == NULL) {\n        free(p);\n        return 0;\n    }\n    p = temp;\n    p[3] = 40;\n    p[4] = 50;\n    p[5] = 60;\n\n    printf(\"%d %d %d\", p[0], p[2], p[5]);\n    free(p);\n}",
+    "answerText": "1 3 60",
+    "explanation": "Shrinking to three elements preserves p[0] and p[2]. After expanding again, the code explicitly assigns 60 to p[5]."
+  },
+  {
+    "id": "dma20",
+    "title": "Replacing an allocation through a double pointer",
+    "question": "Predict the output, assuming allocations succeed.",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n\nvoid replace(int **p) {\n    int *q = malloc(2 * sizeof(int));\n    q[0] = 100;\n    q[1] = 200;\n    free(*p);\n    *p = q;\n}\n\nint main(void) {\n    int *p = malloc(2 * sizeof(int));\n    p[0] = 10;\n    p[1] = 20;\n    replace(&p);\n    printf(\"%d %d\", p[0], p[1]);\n    free(p);\n}",
+    "answerText": "100 200",
+    "explanation": "replace frees the old allocation, stores the new allocation in the caller's p through int **, and initializes its two elements."
+  },
+  {
+    "id": "dma21",
+    "title": "Separate allocations and copying",
+    "question": "Predict the output, assuming allocations succeed.",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n\nint main(void) {\n    int *p = malloc(4 * sizeof(int));\n    for (int i = 0; i < 4; i++) p[i] = i + 1;\n\n    int *q = malloc(2 * sizeof(int));\n    for (int i = 0; i < 2; i++) q[i] = p[i + 2];\n    p[2] = 100;\n\n    int *temp = realloc(q, 4 * sizeof(int));\n    if (temp == NULL) {\n        free(p);\n        free(q);\n        return 0;\n    }\n    q = temp;\n    q[2] = p[0];\n    q[3] = p[1];\n\n    printf(\"%d %d %d %d\", q[0], q[1], q[2], q[3]);\n    free(p);\n    free(q);\n}",
+    "answerText": "3 4 1 2",
+    "explanation": "q first receives copies of p[2] and p[3], namely 3 and 4. Resizing q preserves them, then q[2] and q[3] are assigned p[0] and p[1], namely 1 and 2."
+  },
+  {
+    "id": "dma22",
+    "title": "Allocation size and sizeof",
+    "question": "Predict the output for a typical 64-bit system where pointers are 8 bytes and int is 4 bytes.",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n\nint main(void) {\n    int *p = malloc(10 * sizeof(int));\n    int *q = malloc(5 * sizeof(int));\n    printf(\"%zu %zu %zu\", sizeof(p), sizeof(q), sizeof(*p));\n    free(p);\n    free(q);\n}",
+    "answerText": "8 8 4",
+    "explanation": "sizeof(p) and sizeof(q) measure the pointer objects, not the allocated blocks. sizeof(*p) measures one int. Pointer size is platform-dependent; the prompt specifies the typical 64-bit sizes."
+  },
+  {
+    "id": "dma23",
+    "title": "Freeing an allocation through an interior pointer",
+    "question": "Is the output well-defined?",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n\nint main(void) {\n    int *p = malloc(4 * sizeof(int));\n    for (int i = 0; i < 4; i++) p[i] = i + 1;\n\n    int *q = p + 1;\n    free(q);\n    printf(\"%d\", p[0]);\n    free(p);\n}",
+    "answerText": "Undefined behavior",
+    "explanation": "free must receive the pointer returned by an allocation function, or NULL. q points to an interior element, so free(q) has undefined behavior; the later access and free are invalid too."
+  },
+  {
+    "id": "dma24",
+    "title": "Allocation ownership transfer",
+    "question": "Predict the output. The exact null-pointer spelling printed by %p depends on the platform.",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n\nvoid transfer(int **a, int **b) {\n    *b = *a;\n    *a = NULL;\n}\n\nint main(void) {\n    int *p = malloc(3 * sizeof(int));\n    int *q = NULL;\n    p[0] = 10;\n    p[1] = 20;\n    p[2] = 30;\n\n    transfer(&p, &q);\n    printf(\"%p %d\", (void *)p, q[1]);\n    free(q);\n}",
+    "answerText": "(nil) 20",
+    "explanation": "The function transfers the allocation address from p to q and sets p to NULL. %p's null representation varies by implementation (often (nil) or 0x0); q[1] is 20."
+  },
+  {
+    "id": "dma25",
+    "title": "Using a temporary pointer with realloc",
+    "question": "Predict the output, assuming realloc succeeds.",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n\nint main(void) {\n    int *p = malloc(3 * sizeof(int));\n    p[0] = 10;\n    p[1] = 20;\n    p[2] = 30;\n\n    int *q = p;\n    int *temp = realloc(p, 5 * sizeof(int));\n    if (temp == NULL) {\n        free(p);\n        return 0;\n    }\n    p = temp;\n\n    printf(\"%d\", p[1]);\n    free(p);\n}",
+    "answerText": "20",
+    "explanation": "A successful realloc preserves the existing second element. q becomes a stale alias if the allocation moves, but it is never accessed, so its existence alone does not affect this output."
+  },
+  {
+    "id": "dma26",
+    "title": "Reallocating a pointer stored in an array",
+    "question": "Predict the output, assuming allocations succeed.",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n\nint main(void) {\n    int **p = malloc(2 * sizeof(int *));\n    p[0] = malloc(2 * sizeof(int));\n    p[1] = malloc(2 * sizeof(int));\n    p[0][0] = 10;\n    p[0][1] = 20;\n    p[1][0] = 30;\n    p[1][1] = 40;\n\n    int *temp = realloc(p[0], 4 * sizeof(int));\n    if (temp == NULL) {\n        free(p[0]);\n        free(p[1]);\n        free(p);\n        return 0;\n    }\n    p[0] = temp;\n    p[0][2] = 50;\n    p[0][3] = 60;\n\n    printf(\"%d %d %d\", p[0][3], p[1][0], p[0][1]);\n    free(p[0]);\n    free(p[1]);\n    free(p);\n}",
+    "answerText": "60 30 20",
+    "explanation": "Only p[0]'s allocation is resized. Its existing p[0][1] remains 20, p[0][3] is set to 60, and the independent p[1][0] remains 30."
+  },
+  {
+    "id": "dma27",
+    "title": "Allocation and deallocation order",
+    "question": "Predict the output.",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n\nint main(void) {\n    int *p = malloc(3 * sizeof(int));\n    for (int i = 0; i < 3; i++) p[i] = i + 1;\n\n    int *q = malloc(3 * sizeof(int));\n    for (int i = 0; i < 3; i++) q[i] = p[i] * 10;\n    free(p);\n\n    int *r = malloc(3 * sizeof(int));\n    for (int i = 0; i < 3; i++) r[i] = q[i] + 5;\n    printf(\"%d %d %d\", q[1], r[1], q[2]);\n    free(q);\n    free(r);\n}",
+    "answerText": "20 25 30",
+    "explanation": "q is a separate allocation and remains valid after p is freed. q contains 10, 20, 30; r copies those values plus 5, giving r[1] = 25."
+  },
+  {
+    "id": "dma28",
+    "title": "Reallocation through a pointer-to-pointer",
+    "question": "Predict the output, assuming realloc succeeds.",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n\nvoid fun(int **p) {\n    int *temp = realloc(*p, 2 * sizeof(int));\n    if (temp == NULL) return;\n    *p = temp;\n    (*p)[0] += 10;\n    (*p)[1] += 20;\n}\n\nint main(void) {\n    int *p = malloc(4 * sizeof(int));\n    for (int i = 0; i < 4; i++) p[i] = (i + 1) * 10;\n    fun(&p);\n    printf(\"%d %d\", p[0], p[1]);\n    free(p);\n}",
+    "answerText": "20 40",
+    "explanation": "The first two values (10 and 20) are preserved by shrinking. The function then adds 10 and 20 to those values."
+  },
+  {
+    "id": "dma29",
+    "title": "Deep copy followed by realloc",
+    "question": "Predict the output, assuming realloc succeeds.",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n\nint main(void) {\n    int *p = malloc(3 * sizeof(int));\n    p[0] = 2;\n    p[1] = 4;\n    p[2] = 6;\n\n    int *q = malloc(3 * sizeof(int));\n    for (int i = 0; i < 3; i++) q[i] = p[i];\n\n    int *temp = realloc(p, 5 * sizeof(int));\n    if (temp == NULL) {\n        free(p);\n        free(q);\n        return 0;\n    }\n    p = temp;\n    p[3] = 8;\n    p[4] = 10;\n    q[0] = 100;\n\n    printf(\"%d %d %d\", p[0], q[0], p[4]);\n    free(p);\n    free(q);\n}",
+    "answerText": "2 100 10",
+    "explanation": "q is an independent deep copy, so changing q[0] does not change p[0]. realloc preserves p[0] and the code writes 10 to p[4]."
+  },
+  {
+    "id": "dma30",
+    "title": "Ownership, realloc, and aliases",
+    "question": "Predict the output, assuming allocations succeed.",
+    "code": "#include <stdio.h>\n#include <stdlib.h>\n\nvoid fun(int **p, int n) {\n    int *temp = realloc(*p, n * sizeof(int));\n    if (temp == NULL) return;\n    *p = temp;\n    for (int i = 3; i < n; i++) (*p)[i] = (*p)[i - 1] + (*p)[i - 2];\n}\n\nint main(void) {\n    int *p = malloc(3 * sizeof(int));\n    p[0] = 1;\n    p[1] = 2;\n    p[2] = 3;\n    fun(&p, 7);\n\n    int *q = malloc(7 * sizeof(int));\n    for (int i = 0; i < 7; i++) q[i] = p[i];\n    q[0] = 100;\n\n    int *temp = realloc(q, 9 * sizeof(int));\n    if (temp == NULL) {\n        free(p);\n        free(q);\n        return 0;\n    }\n    q = temp;\n    q[7] = p[5] + p[6];\n    q[8] = q[7] + p[0];\n\n    printf(\"%d %d %d %d\", p[0], q[0], q[7], q[8]);\n    free(p);\n    free(q);\n}",
+    "answerText": "1 100 34 35",
+    "explanation": "The resized p contains the sequence 1, 2, 3, 5, 8, 13, 21. q is a separate copy; q[0] becomes 100, q[7] is 13 + 21 = 34, and q[8] is 34 + p[0] = 35. The attached answer's final two values did not match its code."
+  }
+]

@@ -18,6 +18,8 @@ RUN chmod 600 /app/array.json \
     "/app/2d array.json" \
     /app/functions.json \
     /app/logical.json \
+    /app/dma-coding.json \
+    /app/dma-theory.json \
     /app/pointer-theory.json \
     /app/recursion.json \
     /app/sorting.json \

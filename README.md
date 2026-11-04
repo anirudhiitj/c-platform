@@ -29,8 +29,10 @@ trust on your own Wi-Fi.
 4. Open http://localhost:3000 to check it works.
 
 Edit the topic JSON files later (`logical.json`, `array.json`, `2d array.json`, `strings.json`,
-`functions.json`, or `sorting.json`), then `docker build -t c-practice .`, `docker rm -f c-practice` and
-run step 3 again.
+`functions.json`, `sorting.json`, `dma-coding.json`, or `dma-theory.json`), then
+`docker build -t c-practice .`, `docker rm -f c-practice` and run step 3 again. DMA Theory answers are
+checked individually after submission; DMA Coding uses the same hidden/visible test-case judge as the
+other coding topics.
 
 ## Option B: run directly on the laptop (no Docker)
 

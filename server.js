@@ -47,6 +47,9 @@ const REVISION_PROBLEMS = JSON.parse(fs.readFileSync(path.join(__dirname, 'revis
 const MOCK_QUIZ = JSON.parse(fs.readFileSync(path.join(__dirname, 'mock-quiz.json'), 'utf8'));
 const POINTER_THEORY = JSON.parse(fs.readFileSync(path.join(__dirname, 'pointer-theory.json'), 'utf8'));
 const MOCK_LAB_EXAM = JSON.parse(fs.readFileSync(path.join(__dirname, 'mock-lab-exam.json'), 'utf8'));
+const DMA_THEORY = JSON.parse(fs.readFileSync(path.join(__dirname, 'dma-theory.json'), 'utf8'));
+const DMA_CODING_PROBLEMS = JSON.parse(fs.readFileSync(path.join(__dirname, 'dma-coding.json'), 'utf8'))
+  .map((p) => ({ ...p, category: 'DMA Coding' }));
 const MOCK_EXPLANATIONS = {
   mq1: 'The recurrence gives fun(4)=5 and fun(5)=8. fun(4) makes 9 calls including the base-case calls; negative inputs also satisfy n <= 1, so it terminates for every integer.',
   mq2: 'A 3x3 array is contiguous in row-major order, so offsets 5 and 4 reach 6 and 5. pp++ changes pp, not p; adding 3 to *pp moves p from a[0][0] to a[1][0].',
@@ -64,7 +67,7 @@ const POINTER_THEORY_IDS = new Set(['mq1', 'mq2', 'mq3', 'mq4', 'mq9', 'mq10']);
 const SORTING_PROBLEMS = JSON.parse(fs.readFileSync(path.join(__dirname, 'sorting.json'), 'utf8'))
   .map((p) => ({ ...p, category: p.category || 'Sorting' }))
   .sort((a, b) => ({ sort7: 1, sort2: 2, sort1: 3, sort3: 4, sort6: 5, sort4: 6, sort5: 7 }[a.id] || 99) - ({ sort7: 1, sort2: 2, sort1: 3, sort3: 4, sort6: 5, sort4: 6, sort5: 7 }[b.id] || 99));
-const PROBLEMS = [...LOGICAL_PROBLEMS, ...ARRAY_PROBLEMS, ...TWO_D_ARRAY_PROBLEMS, ...STRING_PROBLEMS, ...FUNCTION_PROBLEMS, ...SORTING_PROBLEMS, ...RECURSION_PROBLEMS, ...REVISION_PROBLEMS, ...MOCK_LAB_EXAM];
+const PROBLEMS = [...LOGICAL_PROBLEMS, ...ARRAY_PROBLEMS, ...TWO_D_ARRAY_PROBLEMS, ...STRING_PROBLEMS, ...FUNCTION_PROBLEMS, ...SORTING_PROBLEMS, ...RECURSION_PROBLEMS, ...REVISION_PROBLEMS, ...DMA_CODING_PROBLEMS, ...MOCK_LAB_EXAM];
 const BY_ID = new Map(PROBLEMS.map((p) => [p.id, p]));
 
 // ---------- tiny job semaphore ----------
@@ -248,6 +251,40 @@ app.get('/api/mock-quiz', (req, res) => {
 app.get('/api/pointer-theory', (req, res) => {
   res.json(POINTER_THEORY
     .map(({ answer, answerText, ...question }) => question));
+});
+
+app.get('/api/dma-theory', (req, res) => {
+  res.json(DMA_THEORY.map(({ answerText, explanation, ...question }) => question));
+});
+
+app.post('/api/dma-theory/grade', (req, res) => {
+  const { questionId, answer } = req.body || {};
+  const question = DMA_THEORY.find((item) => item.id === questionId);
+  if (!question) return res.status(404).json({ error: 'Unknown DMA theory question.' });
+  if (typeof answer !== 'string' || answer.length > 10000) {
+    return res.status(400).json({ error: 'Enter an answer of 10,000 characters or fewer.' });
+  }
+
+  const normalize = (value) => value.trim().toLowerCase().replace(/\s+/g, ' ');
+  let correct = normalize(answer) === normalize(question.answerText);
+  if (question.id === 'dma10') {
+    const submitted = normalize(answer);
+    correct = submitted.startsWith('5 15 ') &&
+      ['?', 'indeterminate', 'undefined', 'unpredictable', 'unknown'].some((term) => submitted.includes(term));
+  } else if (question.id === 'dma22') {
+    correct = ['8 8 4', '4 4 4'].includes(normalize(answer));
+  } else if (question.id === 'dma23') {
+    correct = normalize(answer).includes('undefined behavior');
+  }
+  if (question.id === 'dma24') {
+    const parts = answer.trim().toLowerCase().split(/\s+/);
+    correct = parts.length >= 2 && ['(nil)', 'nil', 'null', '0x0', '0'].includes(parts[0]) && parts[1] === '20';
+  }
+  res.json({
+    correct,
+    answer: question.answerText,
+    explanation: question.explanation,
+  });
 });
 
 app.post('/api/mock-quiz/grade', (req, res) => {

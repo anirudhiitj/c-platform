@@ -41,6 +41,7 @@
   .quizAnswer { width: 100%; min-height: 90px; resize: vertical; margin-top: 10px; padding: 9px; border: 1px solid var(--border); border-radius: 5px; background: var(--bg); color: var(--text); font: inherit; }
   .quizReview { margin-top: 10px; padding: 10px; border-left: 3px solid var(--accent); background: var(--bg); }
   .quizReview.correct { border-left-color: var(--ok); }
+  .quizReview.incorrect { border-left-color: var(--bad); }
   .quizQuestionSubmit { background: var(--accent); color: #fff; border: 0; border-radius: 6px; padding: 7px 12px; font: inherit; cursor: pointer; }
   .quizQuestionSubmit:disabled { opacity: .6; cursor: wait; }
   .quizQuestionResult { margin-left: 10px; color: var(--muted); }
@@ -159,9 +160,7 @@
 <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js"></script>
 <script>
 const DEFAULT_TEMPLATE = '#include <stdio.h>\n\nint main(void) {\n    \n    return 0;\n}\n';
-let problems = [], visibleProblems = [], cur = 0, editor = null, section = 'Sorting', mockQuiz = null;
-const MOCK_LAB_EXAM_KEY = '10072016';
-let mockLabUnlocked = sessionStorage.getItem('mock-lab-exam-unlocked') === 'yes';
+let problems = [], visibleProblems = [], cur = 0, editor = null, section = 'Sorting', mockQuiz = null, dmaTheory = null;
 let liveSocket = null, liveSession = new URLSearchParams(location.search).get('live'), liveApplying = false;
 
 const $ = (id) => document.getElementById(id);
@@ -312,38 +311,14 @@ function renderTabs() {
 
 function renderSections() {
   const s = $('sections'); s.textContent = '';
-  const b = el('button', 'section', 'Mock Lab Exam');
-  b.onclick = () => openMockLabExam();
-  s.appendChild(b);
-  return;
-  /* legacy header sections retained below for reference */
-  ['Sorting', 'Recursion', 'Pointers', 'Pointers Theory', 'Revision', 'Mock Quiz 🔒'].forEach((name) => {
-    const b = el('button', 'section' + (name === section ? ' active' : ''), name);
-    b.onclick = () => {
-      if (name === section) return;
-      if (name === 'Mock Quiz 🔒') { openMockQuiz(); return; }
-      if (name === 'Pointers Theory') { openPointerTheory(); return; }
-      document.body.classList.remove('quiz-open');
-      const previousProblem = visibleProblems[cur];
-      saveCode(previousProblem);
-      section = name;
-      visibleProblems = problems.filter((p) => p.category === section);
-      cur = 0;
-      renderSections();
-      select(0, false);
-    };
-    s.appendChild(b);
+  [['DMA Theory', openDmaTheory], ['DMA Coding', openDmaCoding]].forEach(([name, open]) => {
+    const button = el('button', 'section' + (name === section ? ' active' : ''), name);
+    button.onclick = () => open();
+    s.appendChild(button);
   });
 }
 
 function openMockLabExam(problemIndex = 0) {
-  if (!mockLabUnlocked) {
-    const key = prompt('Enter the Mock Lab Exam key:');
-    if (key === null) return;
-    if (key !== MOCK_LAB_EXAM_KEY) { alert('Incorrect Mock Lab Exam key.'); return; }
-    mockLabUnlocked = true;
-    sessionStorage.setItem('mock-lab-exam-unlocked', 'yes');
-  }
   document.body.classList.remove('quiz-open');
   saveCode(visibleProblems[cur]);
   section = 'Mock Lab Exam';
@@ -352,6 +327,35 @@ function openMockLabExam(problemIndex = 0) {
   renderSections();
   renderSidebar();
   select(cur, false);
+}
+
+async function openDmaTheory() {
+  if (!dmaTheory) {
+    const response = await api('/api/dma-theory');
+    if (!response.ok) { alert('Unable to load DMA theory questions.'); return; }
+    dmaTheory = await response.json();
+  }
+  saveCode(visibleProblems[cur]);
+  section = 'DMA Theory';
+  visibleProblems = [];
+  cur = 0;
+  renderSections();
+  renderSidebar();
+  document.body.classList.add('quiz-open');
+  document.body.classList.remove('sidebar-open');
+  renderDmaTheory(dmaTheory);
+}
+
+function openDmaCoding(problemIndex = 0) {
+  document.body.classList.remove('quiz-open');
+  saveCode(visibleProblems[cur]);
+  section = 'DMA Coding';
+  visibleProblems = problems.filter((problem) => problem.category === section);
+  cur = Math.max(0, Math.min(problemIndex, visibleProblems.length - 1));
+  renderSections();
+  renderSidebar();
+  select(cur, false);
+  document.body.classList.remove('sidebar-open');
 }
 
 async function openMockQuiz() {
@@ -370,6 +374,55 @@ async function openPointerTheory() {
   const pointerTheory = await r.json();
   document.body.classList.add('quiz-open');
   renderQuiz(pointerTheory, 'Pointers Theory');
+}
+
+function renderDmaTheory(questions) {
+  const root = $('quizView'); root.textContent = '';
+  root.appendChild(el('h2', null, 'DMA Theory'));
+  root.appendChild(el('div', 'quizIntro', 'Write an answer for each question and submit it to see whether it is correct, the expected answer, and an explanation.'));
+  questions.forEach((question) => {
+    const card = el('article', 'quizCard');
+    card.appendChild(el('h3', null, question.title));
+    card.appendChild(el('div', null, question.question));
+    if (question.code) card.appendChild(el('pre', 'quizCode', question.code));
+    card.appendChild(el('div', 'note', 'Write the program output or explain the behavior:'));
+    const answer = document.createElement('textarea');
+    answer.className = 'quizAnswer';
+    answer.name = question.id;
+    answer.placeholder = 'Your answer';
+    card.appendChild(answer);
+    const submit = el('button', 'quizQuestionSubmit', 'Submit answer');
+    submit.type = 'button';
+    const result = el('span', 'quizQuestionResult');
+    card.appendChild(submit);
+    card.appendChild(result);
+    submit.onclick = async () => {
+      submit.disabled = true;
+      result.textContent = ' Checking...';
+      try {
+        const response = await api('/api/dma-theory/grade', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ questionId: question.id, answer: answer.value }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Unable to submit your answer.');
+        result.textContent = '';
+        const previousReview = card.querySelector('.quizReview');
+        if (previousReview) previousReview.remove();
+        const review = el('div', 'quizReview ' + (data.correct ? 'correct' : 'incorrect'));
+        review.appendChild(el('strong', null, data.correct ? 'Correct' : 'Incorrect'));
+        review.appendChild(el('div', null, 'Expected answer: ' + data.answer));
+        review.appendChild(el('div', 'muted', 'Explanation: ' + data.explanation));
+        card.appendChild(review);
+      } catch (error) {
+        result.textContent = ' ' + (error.message || 'Unable to submit your answer.');
+      } finally {
+        submit.disabled = false;
+      }
+    };
+    root.appendChild(card);
+  });
 }
 
 function renderQuiz(quiz = mockQuiz, heading = 'Mock Quiz') {
@@ -434,6 +487,16 @@ function renderQuiz(quiz = mockQuiz, heading = 'Mock Quiz') {
 
 function renderSidebar() {
   const root = $('topicGroups'); root.textContent = '';
+  const dmaGroup = {
+    label: 'DMA',
+    topics: [['DMA Theory', 'DMA Theory'], ['DMA Coding', 'DMA Coding']],
+  };
+  const groups = [
+    dmaGroup,
+    { label: 'Basic Logic Questions', topics: [['Logical', 'Basic Logic'], ['Array', 'Array'], ['2D Arrays', '2D Arrays'], ['Strings', 'Strings'], ['Functions', 'Functions']] },
+    { label: 'Today', topics: [['Sorting', 'Sorting'], ['Recursion', 'Recursion'], ['Pointers', 'Pointers'], ['Revision', 'Revision'], ['Mock Quiz 🔒', 'Mock Quiz']] },
+    { label: 'Mock Lab Exam', topics: [['Mock Lab Exam', 'Mock Lab Exam']] },
+  ];
   const theory = el('button', 'topic');
   theory.appendChild(el('span', null, 'Pointers Theory'));
   theory.onclick = openPointerTheory;
@@ -442,11 +505,6 @@ function renderSidebar() {
   mockTheory.appendChild(el('span', null, 'Mock Theory Quiz'));
   mockTheory.onclick = openMockQuiz;
   root.appendChild(mockTheory);
-  const groups = [
-    { label: 'Basic Logic Questions', topics: [['Logical', 'Basic Logic'], ['Array', 'Array'], ['2D Arrays', '2D Arrays'], ['Strings', 'Strings'], ['Functions', 'Functions']] },
-    { label: 'Today', topics: [['Sorting', 'Sorting'], ['Recursion', 'Recursion'], ['Pointers', 'Pointers'], ['Revision', 'Revision'], ['Mock Quiz 🔒', 'Mock Quiz']] },
-  ];
-  groups.push({ label: 'Mock Lab Exam', topics: [['Mock Lab Exam', 'Mock Lab Exam']] });
   groups.forEach((group) => {
     const wrap = el('div', 'topicGroup');
     wrap.appendChild(el('h3', null, group.label));
@@ -455,8 +513,13 @@ function renderSidebar() {
       const topic = el('button', 'topic' + (name === section ? ' active' : ''));
       const displayLabel = name.startsWith('Mock Quiz') ? 'Mock Theory Quiz' : label;
       topic.appendChild(el('span', null, displayLabel));
-      if (!name.startsWith('Mock Quiz')) topic.appendChild(el('small', null, problems.filter((p) => p.category === name).length));
+      if (!name.startsWith('Mock Quiz')) {
+        const count = name === 'DMA Theory' ? dmaTheory ? dmaTheory.length : 30 : problems.filter((p) => p.category === name).length;
+        topic.appendChild(el('small', null, count));
+      }
       topic.onclick = () => {
+        if (name === 'DMA Theory') { openDmaTheory(); return; }
+        if (name === 'DMA Coding') { openDmaCoding(); return; }
         if (name === 'Mock Lab Exam') { openMockLabExam(); return; }
         if (name === 'Mock Quiz 🔒') { openMockQuiz(); return; }
         document.body.classList.remove('quiz-open');
@@ -470,7 +533,7 @@ function renderSidebar() {
         select(0, false);
       };
       wrap.appendChild(topic);
-      if (!name.startsWith('Mock Quiz')) {
+      if (!name.startsWith('Mock Quiz') && name !== 'DMA Theory') {
       const list = el('div', 'questionList');
       problems.filter((p) => p.category === name).forEach((p) => {
         const q = el('button', 'question' + (name === section && visibleProblems[cur] && p.id === visibleProblems[cur].id ? ' current' : ''), p.title);

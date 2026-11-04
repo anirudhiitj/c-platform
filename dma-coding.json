@@ -1,0 +1,46 @@
+[
+  {
+    "id": "dma-running-median",
+    "title": "Running Median",
+    "statement": "Read integers continuously until -1. After each number, print the median of all numbers entered so far. For an even number of values, the median is the average of the two middle values. Print each median on its own line with exactly two digits after the decimal point.\n\nInput: zero or more integers, one per line or separated by spaces, terminated by -1.\nOutput: the running median after each inserted number.\n\nConstraints: 0 <= each number <= 1,000,000; at most 10,000 numbers.",
+    "tests": [
+      {"visible": true, "input": "5\n15\n1\n3\n-1\n", "expected": "5.00\n10.00\n5.00\n4.00\n"},
+      {"visible": true, "input": "7 7 7 -1\n", "expected": "7.00\n7.00\n7.00\n"},
+      {"visible": false, "input": "0\n2\n4\n6\n-1\n", "expected": "0.00\n1.00\n2.00\n3.00\n"},
+      {"visible": false, "input": "9\n1\n8\n2\n-1\n", "expected": "9.00\n5.00\n8.00\n5.00\n"}
+    ]
+  },
+  {
+    "id": "dma-frequency-tracker",
+    "title": "Frequency Tracker",
+    "statement": "Read integers continuously until -1. After every input number, display the frequency of that number among all values read so far. Use the format \"Frequency of X: Y\", with one result per line.\n\nInput: zero or more integers, one per line or separated by spaces, terminated by -1.\nOutput: the entered number and its updated frequency after each insertion.\n\nConstraints: 0 <= each number <= 1,000,000; at most 10,000 numbers.",
+    "tests": [
+      {"visible": true, "input": "5\n2\n5\n5\n2\n-1\n", "expected": "Frequency of 5: 1\nFrequency of 2: 1\nFrequency of 5: 2\nFrequency of 5: 3\nFrequency of 2: 2\n"},
+      {"visible": true, "input": "0 0 1 -1\n", "expected": "Frequency of 0: 1\nFrequency of 0: 2\nFrequency of 1: 1\n"},
+      {"visible": false, "input": "8\n3\n8\n3\n-1\n", "expected": "Frequency of 8: 1\nFrequency of 3: 1\nFrequency of 8: 2\nFrequency of 3: 2\n"},
+      {"visible": false, "input": "42 -1\n", "expected": "Frequency of 42: 1\n"}
+    ]
+  },
+  {
+    "id": "dma-unique-values",
+    "title": "Numbers Appearing Exactly Once",
+    "statement": "Read integers continuously until -1. After every insertion, print all numbers whose frequency so far is exactly one, in the order those numbers first appeared. If there are no such values, print \"Unique: none\". Otherwise print them on one line after \"Unique:\", separated by single spaces.\n\nInput: zero or more integers, one per line or separated by spaces, terminated by -1.\nOutput: the current set of values appearing exactly once after each insertion.\n\nConstraints: 0 <= each number <= 1,000,000; at most 1,000 numbers.",
+    "tests": [
+      {"visible": true, "input": "4\n2\n4\n3\n2\n-1\n", "expected": "Unique: 4\nUnique: 4 2\nUnique: 2\nUnique: 2 3\nUnique: 3\n"},
+      {"visible": true, "input": "6 6 -1\n", "expected": "Unique: 6\nUnique: none\n"},
+      {"visible": false, "input": "1 2 3 1 2 3 -1\n", "expected": "Unique: 1\nUnique: 1 2\nUnique: 1 2 3\nUnique: 2 3\nUnique: 3\nUnique: none\n"},
+      {"visible": false, "input": "0 5 0 7 -1\n", "expected": "Unique: 0\nUnique: 0 5\nUnique: 5\nUnique: 5 7\n"}
+    ]
+  },
+  {
+    "id": "dma-last-k-average",
+    "title": "Average of the Last K Numbers",
+    "statement": "Read K first. Then continuously read numbers until -1. After each number is inserted, print the average of the most recent K numbers. Until K numbers have been entered, average all numbers entered so far. Print each average on its own line with exactly two digits after the decimal point.\n\nInput: K followed by zero or more numbers, terminated by -1.\nOutput: the sliding average after each insertion.\n\nConstraints: 1 <= K <= 1,000; 0 <= each number <= 1,000,000; at most 10,000 numbers.",
+    "tests": [
+      {"visible": true, "input": "3\n2\n4\n6\n8\n-1\n", "expected": "2.00\n3.00\n4.00\n6.00\n"},
+      {"visible": true, "input": "1 0 7 4 -1\n", "expected": "0.00\n7.00\n4.00\n"},
+      {"visible": false, "input": "2\n10\n20\n30\n-1\n", "expected": "10.00\n15.00\n25.00\n"},
+      {"visible": false, "input": "4 5 15 -1\n", "expected": "5.00\n10.00\n"}
+    ]
+  }
+]
